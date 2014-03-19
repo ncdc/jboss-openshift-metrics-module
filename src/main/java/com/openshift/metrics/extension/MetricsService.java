@@ -152,7 +152,7 @@ public class MetricsService implements Service<MetricsService> {
 	 * @param source a path to either a {@link ResourceDefinition} or an MBean
 	 * @throws SchedulerException
 	 */
-	public void addMetricSource(String schedule, String source) throws SchedulerException {
+	public void addMetricSource(String schedule, Source source) throws SchedulerException {
 		final JobDetail job = scheduler.getJobDetail(JobKey.jobKey(schedule));
 		final JobDataMap jobDataMap = job.getJobDataMap();
 		Map<Source, Map<String, String>> metricSourceMap = (Map<Source, Map<String, String>>) jobDataMap.get("metricSources");
@@ -170,7 +170,7 @@ public class MetricsService implements Service<MetricsService> {
 	 * @param source a path to either a {@link ResourceDefinition} or an MBean
 	 * @throws SchedulerException
 	 */
-	public void removeMetricSource(String schedule, String source) throws SchedulerException {
+	public void removeMetricSource(String schedule, Source source) throws SchedulerException {
 		final JobDetail job = scheduler.getJobDetail(JobKey.jobKey(schedule));
 		final JobDataMap jobDataMap = job.getJobDataMap();
 		Map<Source,Map<String, String>> metricSourceMap = (Map<Source, Map<String, String>>) jobDataMap.get("metricSources");
@@ -187,7 +187,7 @@ public class MetricsService implements Service<MetricsService> {
 	 * @param publishName name to use when publishing this metric
 	 * @throws SchedulerException
 	 */
-	public void addMetric(String schedule, String source, String key, String publishName) throws SchedulerException {
+	public void addMetric(String schedule, Source source, String key, String publishName) throws SchedulerException {
 		JobDetail job = scheduler.getJobDetail(JobKey.jobKey(schedule));
 		
 		final JobDataMap jobDataMap = job.getJobDataMap();
@@ -220,7 +220,7 @@ public class MetricsService implements Service<MetricsService> {
 	 * @param publishName name to use when publishing this metric
 	 * @throws SchedulerException
 	 */
-	public void removeMetric(String schedule, String source, String key, String publishName) throws SchedulerException {
+	public void removeMetric(String schedule, Source source, String key, String publishName) throws SchedulerException {
 		JobDetail job = scheduler.getJobDetail(JobKey.jobKey(schedule));
 		final JobDataMap jobDataMap = job.getJobDataMap();
 		Map<Source,Map<String, String>> metricSourceMap = (Map<Source, Map<String, String>>) jobDataMap.get("metricSources");
