@@ -1,7 +1,12 @@
 package com.openshift.metrics.extension;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+
+import org.jboss.as.controller.OperationDefinition;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+
 
 /**
  * @author <a href="mailto:tcerar@redhat.com">Tomaz Cerar</a>
@@ -9,6 +14,9 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 public class OpenShiftSubsystemDefinition extends SimpleResourceDefinition {
     public static final OpenShiftSubsystemDefinition INSTANCE = new OpenShiftSubsystemDefinition();
 
+    private static final OperationDefinition ADD_SCHEDULE =
+    		new SimpleOperationDefinitionBuilder(ADD, OpenShiftSubsystemExtension.getResourceDescriptionResolver("schedule")).build();
+    
     private OpenShiftSubsystemDefinition() {
         super(OpenShiftSubsystemExtension.SUBSYSTEM_PATH,
                 OpenShiftSubsystemExtension.getResourceDescriptionResolver(null),
@@ -21,11 +29,15 @@ public class OpenShiftSubsystemDefinition extends SimpleResourceDefinition {
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
-        //you can register aditional operations here
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        //you can register attributes here
+    }
+    
+    @Override
+    public void registerChildren(ManagementResourceRegistration resourceRegistration) {
+    	super.registerChildren(resourceRegistration);
+    	resourceRegistration.registerSubModel(ScheduleDefinition.INSTANCE);
     }
 }

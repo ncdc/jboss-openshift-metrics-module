@@ -82,17 +82,18 @@ public class MetricsService implements Service<MetricsService> {
 		return ServiceName.JBOSS.append("metrics");
 	}
 
-	public void addSchedule(String schedule) throws SchedulerException {
+	public JobDetail getJobDetail(String schedule) throws SchedulerException {
+		return scheduler.getJobDetail(JobKey.jobKey(schedule));
+	}
+	
+	public JobDetail createJob(String schedule) throws SchedulerException {
 		JobDetail job = JobBuilder.newJob(MetricJob.class)
 								  .withIdentity(schedule)
+								  .storeDurably()
 								  .build();
 		
-		Trigger trigger = TriggerBuilder.newTrigger()
-									    .forJob(job)
-									    .withSchedule(CronScheduleBuilder.cronSchedule(schedule))
-									    .build();
-		
-		scheduler.scheduleJob(job, trigger);
+		scheduler.addJob(job, false);
+		return job;
 	}
 	
 	public void addMetricSource(String schedule, String source) throws SchedulerException {
@@ -101,33 +102,50 @@ public class MetricsService implements Service<MetricsService> {
 		Map<String,List<Metric>> metricSourceMap = (Map<String, List<Metric>>) jobDataMap.get("metricSources");
 		if(null == metricSourceMap) {
 			metricSourceMap = new HashMap<String, List<Metric>>();
+			jobDataMap.put("metricSources", metricSourceMap);
 		}
 		metricSourceMap.put(source, new ArrayList<Metric>());
 		scheduler.addJob(job, true);
 	}
 	
 	public void addMetric(String schedule, String source, String key, String publishName) throws SchedulerException {
-		final JobDetail job = scheduler.getJobDetail(JobKey.jobKey(schedule));
+		JobDetail job = scheduler.getJobDetail(JobKey.jobKey(schedule));
+		
 		final JobDataMap jobDataMap = job.getJobDataMap();
 		Map<String,List<Metric>> metricSourceMap = (Map<String, List<Metric>>) jobDataMap.get("metricSources");
 		final List<Metric> metrics = metricSourceMap.get(source);
 		metrics.add(new Metric(key, publishName));
-	}
-	
-	public boolean removeJob(String metric) throws SchedulerException {
-		return scheduler.deleteJob(JobKey.jobKey(metric));
-	}
-	
-	public void updateSchedule(String metric, String schedule) throws SchedulerException {
-		Trigger newTrigger = TriggerBuilder.newTrigger()
-				.forJob(JobKey.jobKey(metric))
+		
+		scheduler.addJob(job, true);
+
+		Trigger trigger = TriggerBuilder.newTrigger()
+				.forJob(job)
 				.withSchedule(CronScheduleBuilder.cronSchedule(schedule))
 				.build();
 		
-		scheduler.rescheduleJob(TriggerKey.triggerKey(metric), newTrigger);
+		if(!scheduler.checkExists(trigger.getKey())) {
+			scheduler.scheduleJob(trigger);
+		}
 	}
+	
+//	public boolean removeJob(String metric) throws SchedulerException {
+//		return scheduler.deleteJob(JobKey.jobKey(metric));
+//	}
+//	
+//	public void updateSchedule(String oldSchedule, String newSchedule) throws SchedulerException {
+//		Trigger newTrigger = TriggerBuilder.newTrigger()
+//				.forJob(JobKey.jobKey(newS))
+//				.withSchedule(CronScheduleBuilder.cronSchedule(newSchedule))
+//				.build();
+//		
+//		scheduler.rescheduleJob(TriggerKey.triggerKey(metric), newTrigger);
+//	}
 	
 	public ModelControllerClient getModelControllerClient() {
 		return modelControllerClient;
+	}
+	
+	public InjectedValue<ModelController> getInjectedModelController() {
+		return injectedModelController;
 	}
 }

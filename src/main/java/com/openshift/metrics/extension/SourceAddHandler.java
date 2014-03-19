@@ -14,10 +14,10 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.quartz.SchedulerException;
 
-public class MetricAddHandler extends AbstractAddStepHandler implements DescriptionProvider {
-	public static final MetricAddHandler INSTANCE = new MetricAddHandler();
+public class SourceAddHandler extends AbstractAddStepHandler implements DescriptionProvider {
+	public static final SourceAddHandler INSTANCE = new SourceAddHandler();
 	
-	public MetricAddHandler() {
+	public SourceAddHandler() {
 	}
 	
 	@Override
@@ -28,20 +28,16 @@ public class MetricAddHandler extends AbstractAddStepHandler implements Descript
 
 	@Override
 	protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-		MetricDefinition.KEY.validateAndSet(operation, model);
-//		MetricDefinition.PUBLISH_NAME.validateAndSet(operation, model);
+//		SourceDefinition.NODE.validateAndSet(operation, model);
 	}
 
 	@Override
 	protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
 		MetricsService service = (MetricsService) context.getServiceRegistry(true).getRequiredService(MetricsService.getServiceName()).getValue();
-		String key = MetricDefinition.KEY.resolveModelAttribute(context, model).asString();
-		// subsystem=metrics/schedule=0 * * * * */source=src/metric=publishName
 		final String schedule = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getElement(1).getValue();
-		final String source = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getElement(2).getValue();
-		String publishName = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getElement(3).getValue();
+		String source = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getLastElement().getValue();
 		try {
-			service.addMetric(schedule, source, key, publishName);
+			service.addMetricSource(schedule, source);
 		} catch (SchedulerException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

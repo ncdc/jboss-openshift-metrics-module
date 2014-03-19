@@ -13,39 +13,40 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 public class SourceDefinition extends SimpleResourceDefinition {
+	public static final PathElement SOURCE_PATH = PathElement.pathElement("source");
+	
 	public static final SourceDefinition INSTANCE = new SourceDefinition();
 	
-	public static final PathElement METRIC_PATH = PathElement.pathElement("metric");
-	
-	protected static final SimpleAttributeDefinition NAME = 
-			new SimpleAttributeDefinitionBuilder("name", ModelType.STRING)
+	protected static final SimpleAttributeDefinition NODE = 
+			new SimpleAttributeDefinitionBuilder("node", ModelType.STRING)
 				.setAllowExpression(false)
-				.setXmlName("name")
+				.setXmlName("node")
 				.setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
 				.setAllowNull(false)
-				.build();
-	
-	protected static final SimpleAttributeDefinition SCHEDULE =
-			new SimpleAttributeDefinitionBuilder("schedule", ModelType.STRING)
-				.setAllowExpression(false)
-				.setXmlName("schedule")
-				.setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
-				.setAllowNull(false)
-				.setDefaultValue(new ModelNode("minutely"))
 				.build();
 	
 	private SourceDefinition() {
-		super(METRIC_PATH, OpenShiftSubsystemExtension.getResourceDescriptionResolver("metric"), MetricAddHandler.INSTANCE, MetricRemoveHandler.INSTANCE);
+		super(SOURCE_PATH, OpenShiftSubsystemExtension.getResourceDescriptionResolver("source"), SourceAddHandler.INSTANCE, SourceRemoveHandler.INSTANCE);
+	}
+	
+	@Override
+	public void registerOperations(ManagementResourceRegistration resourceRegistration) {
+		super.registerOperations(resourceRegistration);
 	}
 	
 	@Override
 	public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-		resourceRegistration.registerReadWriteAttribute(NAME, null, MetricNameHandler.INSTANCE);
-		resourceRegistration.registerReadWriteAttribute(SCHEDULE, null, MetricScheduleHandler.INSTANCE);
+//		resourceRegistration.registerReadWriteAttribute(NODE, null, SourceNodeHandler.INSTANCE);
 	}
 	
-	static class MetricNameHandler extends AbstractWriteAttributeHandler<Void> {
-		public static final MetricNameHandler INSTANCE = new MetricNameHandler();
+	@Override
+	public void registerChildren(ManagementResourceRegistration resourceRegistration) {
+		super.registerChildren(resourceRegistration);
+		resourceRegistration.registerSubModel(MetricDefinition.INSTANCE);
+	}
+	
+	static class SourceNodeHandler extends AbstractWriteAttributeHandler<Void> {
+		public static final SourceNodeHandler INSTANCE = new SourceNodeHandler();
 
 		@Override
 		protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, org.jboss.as.controller.AbstractWriteAttributeHandler.HandbackHolder<Void> handbackHolder) throws OperationFailedException {
@@ -60,23 +61,6 @@ public class SourceDefinition extends SimpleResourceDefinition {
 		
 		private void modify(OperationContext context, ModelNode operation, String oldValue, String newValue) {
 			MetricsService service = (MetricsService)context.getServiceRegistry(true).getRequiredService(MetricsService.getServiceName()).getValue();
-		}
-	}
-	
-	static class MetricScheduleHandler extends AbstractWriteAttributeHandler<Void> {
-		public static final MetricScheduleHandler INSTANCE = new MetricScheduleHandler();
-
-		@Override
-		protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, org.jboss.as.controller.AbstractWriteAttributeHandler.HandbackHolder<Void> handbackHolder) throws OperationFailedException {
-			modify(context, operation, resolvedValue.asString());
-			return false;
-		}
-
-		private void modify(OperationContext context, ModelNode operation, String value) {
-		}
-
-		@Override
-		protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Void handback) throws OperationFailedException {
 		}
 	}
 }

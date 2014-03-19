@@ -154,6 +154,7 @@
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-controller</artifactId>
+            <version>7.3.0.Final-redhat-14</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.as</groupId>

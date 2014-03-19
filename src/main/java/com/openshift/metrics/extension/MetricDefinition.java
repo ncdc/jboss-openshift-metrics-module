@@ -13,26 +13,25 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 public class MetricDefinition extends SimpleResourceDefinition {
-	public static final MetricDefinition INSTANCE = new MetricDefinition();
-	
 	public static final PathElement METRIC_PATH = PathElement.pathElement("metric");
 	
-	protected static final SimpleAttributeDefinition NAME = 
-			new SimpleAttributeDefinitionBuilder("name", ModelType.STRING)
+	public static final MetricDefinition INSTANCE = new MetricDefinition();
+	
+	protected static final SimpleAttributeDefinition KEY = 
+			new SimpleAttributeDefinitionBuilder("key", ModelType.STRING)
 				.setAllowExpression(false)
-				.setXmlName("name")
+				.setXmlName("key")
 				.setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
 				.setAllowNull(false)
 				.build();
 	
-	protected static final SimpleAttributeDefinition SCHEDULE =
-			new SimpleAttributeDefinitionBuilder("schedule", ModelType.STRING)
-				.setAllowExpression(false)
-				.setXmlName("schedule")
-				.setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
-				.setAllowNull(false)
-				.setDefaultValue(new ModelNode("minutely"))
-				.build();
+//	protected static final SimpleAttributeDefinition PUBLISH_NAME =
+//			new SimpleAttributeDefinitionBuilder("publish-name", ModelType.STRING)
+//				.setAllowExpression(false)
+//				.setXmlName("publish-name")
+//				.setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+//				.setAllowNull(false)
+//				.build();
 	
 	private MetricDefinition() {
 		super(METRIC_PATH, OpenShiftSubsystemExtension.getResourceDescriptionResolver("metric"), MetricAddHandler.INSTANCE, MetricRemoveHandler.INSTANCE);
@@ -40,12 +39,12 @@ public class MetricDefinition extends SimpleResourceDefinition {
 	
 	@Override
 	public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-		resourceRegistration.registerReadWriteAttribute(NAME, null, MetricNameHandler.INSTANCE);
-		resourceRegistration.registerReadWriteAttribute(SCHEDULE, null, MetricScheduleHandler.INSTANCE);
+		resourceRegistration.registerReadWriteAttribute(KEY, null, MetricKeyHandler.INSTANCE);
+//		resourceRegistration.registerReadWriteAttribute(PUBLISH_NAME, null, MetricPublishNameHandler.INSTANCE);
 	}
 	
-	static class MetricNameHandler extends AbstractWriteAttributeHandler<Void> {
-		public static final MetricNameHandler INSTANCE = new MetricNameHandler();
+	static class MetricKeyHandler extends AbstractWriteAttributeHandler<Void> {
+		public static final MetricKeyHandler INSTANCE = new MetricKeyHandler();
 
 		@Override
 		protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, org.jboss.as.controller.AbstractWriteAttributeHandler.HandbackHolder<Void> handbackHolder) throws OperationFailedException {
@@ -63,20 +62,20 @@ public class MetricDefinition extends SimpleResourceDefinition {
 		}
 	}
 	
-	static class MetricScheduleHandler extends AbstractWriteAttributeHandler<Void> {
-		public static final MetricScheduleHandler INSTANCE = new MetricScheduleHandler();
-
-		@Override
-		protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, org.jboss.as.controller.AbstractWriteAttributeHandler.HandbackHolder<Void> handbackHolder) throws OperationFailedException {
-			modify(context, operation, resolvedValue.asString());
-			return false;
-		}
-
-		private void modify(OperationContext context, ModelNode operation, String value) {
-		}
-
-		@Override
-		protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Void handback) throws OperationFailedException {
-		}
-	}
+//	static class MetricPublishNameHandler extends AbstractWriteAttributeHandler<Void> {
+//		public static final MetricPublishNameHandler INSTANCE = new MetricPublishNameHandler();
+//
+//		@Override
+//		protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, org.jboss.as.controller.AbstractWriteAttributeHandler.HandbackHolder<Void> handbackHolder) throws OperationFailedException {
+//			modify(context, operation, resolvedValue.asString());
+//			return false;
+//		}
+//
+//		private void modify(OperationContext context, ModelNode operation, String value) {
+//		}
+//
+//		@Override
+//		protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Void handback) throws OperationFailedException {
+//		}
+//	}
 }

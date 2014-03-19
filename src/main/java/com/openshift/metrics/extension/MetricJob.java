@@ -1,7 +1,6 @@
 package com.openshift.metrics.extension;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -48,7 +47,7 @@ public class MetricJob implements Job {
 				final int dotIndex = key.indexOf('.');
 				final int leftBracketIndex = key.indexOf('[');
 				if(dotIndex > -1) {
-					subkey = key.substring(dotIndex);
+					subkey = key.substring(dotIndex + 1);
 					key = key.substring(0, dotIndex);
 				}
 				
