@@ -24,8 +24,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
  * Here is an example that allows you a fine grained controler over what is tested and how. So it can give you ideas what can be done and tested.
  * If you have no need for advanced testing of subsystem you look at {@link SubsystemBaseParsingTestCase} that testes same stuff but most of the code
  * is hidden inside of test harness
- *
- * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class SubsystemParsingTestCase extends AbstractSubsystemTest {
 

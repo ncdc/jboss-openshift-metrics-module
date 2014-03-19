@@ -1,5 +1,7 @@
 package com.openshift.metrics.extension;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+
 import java.util.List;
 import java.util.Locale;
 
@@ -27,14 +29,13 @@ public class ScheduleAddHandler extends AbstractAddStepHandler implements Descri
 
 	@Override
 	protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-//		ScheduleDefinition.CRON.validateAndSet(operation, model);
+		model.get("source").setEmptyList();
 	}
 
 	@Override
 	protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
 		MetricsService service = (MetricsService) context.getServiceRegistry(true).getRequiredService(MetricsService.getServiceName()).getValue();
-//		String schedule = ScheduleDefinition.CRON.resolveModelAttribute(context, model).asString();
-		ModelNode address = operation.require("address");
+		ModelNode address = operation.require(OP_ADDR);
 		String schedule = PathAddress.pathAddress(address).getLastElement().getValue();
 		try {
 			service.createJob(schedule);

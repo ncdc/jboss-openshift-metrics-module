@@ -1,8 +1,6 @@
 package com.openshift.metrics.extension;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,7 +40,7 @@ public class MetricsService implements Service<MetricsService> {
 	            @Override
 	            public Thread newThread(Runnable run) {
 	                Thread thread = new Thread(run);
-	                thread.setName("ConfigAdmin Management Thread");
+	                thread.setName("Metrics Management Client Thread");
 	                thread.setDaemon(true);
 	                return thread;
 	            }
@@ -98,15 +96,27 @@ public class MetricsService implements Service<MetricsService> {
 		return job;
 	}
 	
+	public void removeJob(String schedule) throws SchedulerException {
+		scheduler.deleteJob(JobKey.jobKey(schedule));
+	}
+	
 	public void addMetricSource(String schedule, String source) throws SchedulerException {
 		final JobDetail job = scheduler.getJobDetail(JobKey.jobKey(schedule));
 		final JobDataMap jobDataMap = job.getJobDataMap();
-		Map<String,List<Metric>> metricSourceMap = (Map<String, List<Metric>>) jobDataMap.get("metricSources");
+		Map<String, Map<String, String>> metricSourceMap = (Map<String, Map<String, String>>) jobDataMap.get("metricSources");
 		if(null == metricSourceMap) {
-			metricSourceMap = new HashMap<String, List<Metric>>();
+			metricSourceMap = new HashMap<String, Map<String, String>>();
 			jobDataMap.put("metricSources", metricSourceMap);
 		}
-		metricSourceMap.put(source, new ArrayList<Metric>());
+		metricSourceMap.put(source, new HashMap<String, String>());
+		scheduler.addJob(job, true);
+	}
+	
+	public void removeMetricSource(String schedule, String source) throws SchedulerException {
+		final JobDetail job = scheduler.getJobDetail(JobKey.jobKey(schedule));
+		final JobDataMap jobDataMap = job.getJobDataMap();
+		Map<String,Map<String, String>> metricSourceMap = (Map<String, Map<String, String>>) jobDataMap.get("metricSources");
+		metricSourceMap.remove(source);
 		scheduler.addJob(job, true);
 	}
 	
@@ -114,34 +124,35 @@ public class MetricsService implements Service<MetricsService> {
 		JobDetail job = scheduler.getJobDetail(JobKey.jobKey(schedule));
 		
 		final JobDataMap jobDataMap = job.getJobDataMap();
-		Map<String,List<Metric>> metricSourceMap = (Map<String, List<Metric>>) jobDataMap.get("metricSources");
-		final List<Metric> metrics = metricSourceMap.get(source);
-		metrics.add(new Metric(key, publishName));
+		Map<String,Map<String, String>> metricSourceMap = (Map<String, Map<String, String>>) jobDataMap.get("metricSources");
+		final Map<String, String> metrics = metricSourceMap.get(source);
+		metrics.put(key, publishName);
 		
 		scheduler.addJob(job, true);
 
-		Trigger trigger = TriggerBuilder.newTrigger()
-				.forJob(job)
-				.withSchedule(CronScheduleBuilder.cronSchedule(schedule))
-				.build();
+		TriggerKey triggerKey = TriggerKey.triggerKey(schedule);
 		
-		if(!scheduler.checkExists(trigger.getKey())) {
+		if(!scheduler.checkExists(triggerKey)) {
+			Trigger trigger = TriggerBuilder.newTrigger()
+					.withIdentity(triggerKey)
+					.forJob(job)
+					.withSchedule(CronScheduleBuilder.cronSchedule(schedule))
+					.build();
+			
 			scheduler.scheduleJob(trigger);
 		}
 	}
 	
-//	public boolean removeJob(String metric) throws SchedulerException {
-//		return scheduler.deleteJob(JobKey.jobKey(metric));
-//	}
-//	
-//	public void updateSchedule(String oldSchedule, String newSchedule) throws SchedulerException {
-//		Trigger newTrigger = TriggerBuilder.newTrigger()
-//				.forJob(JobKey.jobKey(newS))
-//				.withSchedule(CronScheduleBuilder.cronSchedule(newSchedule))
-//				.build();
-//		
-//		scheduler.rescheduleJob(TriggerKey.triggerKey(metric), newTrigger);
-//	}
+	public void removeMetric(String schedule, String source, String key, String publishName) throws SchedulerException {
+		JobDetail job = scheduler.getJobDetail(JobKey.jobKey(schedule));
+		
+		final JobDataMap jobDataMap = job.getJobDataMap();
+		Map<String,Map<String, String>> metricSourceMap = (Map<String, Map<String, String>>) jobDataMap.get("metricSources");
+		final Map<String, String> metrics = metricSourceMap.get(source);
+		metrics.remove(key);
+		
+		scheduler.addJob(job, true);
+	}
 	
 	public ModelControllerClient getModelControllerClient() {
 		return modelControllerClient;

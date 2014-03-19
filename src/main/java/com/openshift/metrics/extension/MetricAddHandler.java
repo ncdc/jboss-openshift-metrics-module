@@ -29,7 +29,6 @@ public class MetricAddHandler extends AbstractAddStepHandler implements Descript
 	@Override
 	protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
 		MetricDefinition.KEY.validateAndSet(operation, model);
-//		MetricDefinition.PUBLISH_NAME.validateAndSet(operation, model);
 	}
 
 	@Override

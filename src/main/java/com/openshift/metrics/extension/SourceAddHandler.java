@@ -28,7 +28,7 @@ public class SourceAddHandler extends AbstractAddStepHandler implements Descript
 
 	@Override
 	protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-//		SourceDefinition.NODE.validateAndSet(operation, model);
+		model.get("metric").setEmptyList();
 	}
 
 	@Override
