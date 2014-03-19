@@ -35,6 +35,21 @@ public class MetricsService implements Service<MetricsService> {
 	private ExecutorService managementOperationExecutor;
 	
 	public MetricsService() {
+		try {
+			scheduler = StdSchedulerFactory.getDefaultScheduler();
+		
+			managementOperationExecutor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+	            @Override
+	            public Thread newThread(Runnable run) {
+	                Thread thread = new Thread(run);
+	                thread.setName("ConfigAdmin Management Thread");
+	                thread.setDaemon(true);
+	                return thread;
+	            }
+	        });
+		} catch (SchedulerException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
@@ -45,19 +60,6 @@ public class MetricsService implements Service<MetricsService> {
 	@Override
 	public void start(StartContext context) throws StartException {
 		try {
-			scheduler = StdSchedulerFactory.getDefaultScheduler();
-			
-			managementOperationExecutor = Executors.newSingleThreadExecutor(new ThreadFactory() {
-	            @Override
-	            public Thread newThread(Runnable run) {
-	                Thread thread = new Thread(run);
-	                thread.setName("ConfigAdmin Management Thread");
-	                thread.setDaemon(true);
-	                return thread;
-	            }
-	        });
-
-			
 			modelControllerClient = injectedModelController.getValue().createClient(managementOperationExecutor);
 			
 			scheduler.getContext().put("modelControllerClient", modelControllerClient);

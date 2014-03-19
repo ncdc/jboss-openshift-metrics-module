@@ -59,7 +59,7 @@ public class MetricJob implements Job {
 					if(subkey != null) {
 						result = result.get(subkey);
 					}
-					System.out.println(result.asString());
+					System.out.println(address.asString() + "|" + metric.getKey() + "=" + result.asString());
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
