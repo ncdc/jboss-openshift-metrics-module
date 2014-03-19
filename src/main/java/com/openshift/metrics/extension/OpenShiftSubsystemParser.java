@@ -80,18 +80,21 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
     
     private void readMetricSource(XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
     	String node = null;
+    	final ModelNode addSourceOperation = Util.createAddOperation();
     	for (int i = 0; i < reader.getAttributeCount(); i++) {
     		String attr = reader.getAttributeLocalName(i);
             String value = reader.getAttributeValue(i);
             if("node".equals(attr)) {
             	node= value;
+            } else if("mbean".equals(attr)) {
+            	SourceDefinition.MBEAN.parseAndSetParameter(value, addSourceOperation, reader);
             } else {
             	throw ParseUtils.unexpectedAttribute(reader, i);
             }
     	}
     	
     	PathAddress address = parentAddress.append(PathElement.pathElement("source", node));
-    	final ModelNode addSourceOperation = Util.createAddOperation(address);
+    	addSourceOperation.get(OP_ADDR).set(address.toModelNode());
     	list.add(addSourceOperation);
     	
     	while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
