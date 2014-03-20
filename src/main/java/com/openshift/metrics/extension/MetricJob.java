@@ -69,7 +69,7 @@ public class MetricJob implements Job {
         // loop through each source, processing all of each source's metrics
         for (Source source : sources.keySet()) {
             if(source.ismBean()) {
-                //		        doMBeanSource(source);
+                //                doMBeanSource(source);
             } else {
                 //TODO consider switching jobDataMap(METRIC_SOURCES) to a List or Set
                 //and add the metrics to the Source class itself

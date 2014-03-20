@@ -28,18 +28,18 @@ class OpenShiftSubsystemAdd extends AbstractAddStepHandler{
     /** {@inheritDoc} */
     @Override
     protected void performRuntime(org.jboss.as.controller.OperationContext context, ModelNode operation, ModelNode model, org.jboss.as.controller.ServiceVerificationHandler verificationHandler, java.util.List<org.jboss.msc.service.ServiceController<?>> newControllers) throws OperationFailedException {
-		MetricsService service = new MetricsService();
-		
-    	ServiceController<MetricsService> controller = context.getServiceTarget()
-    			.addService(MetricsService.getServiceName(), service)
-    			.addDependency(DependencyType.REQUIRED,
-    					Services.JBOSS_SERVER_CONTROLLER,
-    					ModelController.class,
-    					service.getInjectedModelController())
-    			.addListener(verificationHandler)
-    			.setInitialMode(Mode.ACTIVE)
-    			.install();
-    	
-    	newControllers.add(controller);
+        MetricsService service = new MetricsService();
+        
+        ServiceController<MetricsService> controller = context.getServiceTarget()
+                .addService(MetricsService.getServiceName(), service)
+                .addDependency(DependencyType.REQUIRED,
+                        Services.JBOSS_SERVER_CONTROLLER,
+                        ModelController.class,
+                        service.getInjectedModelController())
+                .addListener(verificationHandler)
+                .setInitialMode(Mode.ACTIVE)
+                .install();
+        
+        newControllers.add(controller);
     }
 }

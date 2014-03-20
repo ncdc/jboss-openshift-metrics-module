@@ -39,97 +39,97 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
      */
     @Override
     public void readElement(XMLExtendedStreamReader reader, List<ModelNode> list) throws XMLStreamException {
-    	ParseUtils.requireNoAttributes(reader);
-    	
-    	final PathAddress address = PathAddress.pathAddress(OpenShiftSubsystemExtension.SUBSYSTEM_PATH);
-    	final ModelNode subsystem = Util.createAddOperation(address);
+        ParseUtils.requireNoAttributes(reader);
+        
+        final PathAddress address = PathAddress.pathAddress(OpenShiftSubsystemExtension.SUBSYSTEM_PATH);
+        final ModelNode subsystem = Util.createAddOperation(address);
         list.add(subsystem);
         
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-        	if(!reader.getLocalName().equals("metric-schedule")) {
-        		throw ParseUtils.unexpectedElement(reader);
-        	}
-        	
-    		readMetricSchedule(reader, address, list);
+            if(!reader.getLocalName().equals("metric-schedule")) {
+                throw ParseUtils.unexpectedElement(reader);
+            }
+            
+            readMetricSchedule(reader, address, list);
         }
     }
     
     private void readMetricSchedule(XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
-    	String schedule = null;
-    	for (int i = 0; i < reader.getAttributeCount(); i++) {
-    		String attr = reader.getAttributeLocalName(i);
+        String schedule = null;
+        for (int i = 0; i < reader.getAttributeCount(); i++) {
+            String attr = reader.getAttributeLocalName(i);
             String value = reader.getAttributeValue(i);
             if("cron".equals(attr)) {
-            	schedule = value;
+                schedule = value;
             } else {
-            	throw ParseUtils.unexpectedAttribute(reader, i);
+                throw ParseUtils.unexpectedAttribute(reader, i);
             }
-    	}
-    	
-    	final PathAddress address = parentAddress.append("schedule", schedule);
-    	final ModelNode addScheduleOperation = Util.createAddOperation(address);
-    	list.add(addScheduleOperation);
-    	
-    	while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-    		if(!reader.getLocalName().equals("source")) {
-    			throw ParseUtils.unexpectedElement(reader);
-    		}
-    		readMetricSource(reader, address, list);
-    	}
+        }
+        
+        final PathAddress address = parentAddress.append("schedule", schedule);
+        final ModelNode addScheduleOperation = Util.createAddOperation(address);
+        list.add(addScheduleOperation);
+        
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            if(!reader.getLocalName().equals("source")) {
+                throw ParseUtils.unexpectedElement(reader);
+            }
+            readMetricSource(reader, address, list);
+        }
     }
     
     private void readMetricSource(XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
-    	String node = null;
-    	final ModelNode addSourceOperation = Util.createAddOperation();
-    	for (int i = 0; i < reader.getAttributeCount(); i++) {
-    		String attr = reader.getAttributeLocalName(i);
+        String node = null;
+        final ModelNode addSourceOperation = Util.createAddOperation();
+        for (int i = 0; i < reader.getAttributeCount(); i++) {
+            String attr = reader.getAttributeLocalName(i);
             String value = reader.getAttributeValue(i);
             if("node".equals(attr)) {
-            	node= value;
+                node= value;
             } else if("mbean".equals(attr)) {
-            	SourceDefinition.MBEAN.parseAndSetParameter(value, addSourceOperation, reader);
+                SourceDefinition.MBEAN.parseAndSetParameter(value, addSourceOperation, reader);
             } else {
-            	throw ParseUtils.unexpectedAttribute(reader, i);
+                throw ParseUtils.unexpectedAttribute(reader, i);
             }
-    	}
-    	
-    	PathAddress address = parentAddress.append(PathElement.pathElement("source", node));
-    	addSourceOperation.get(OP_ADDR).set(address.toModelNode());
-    	list.add(addSourceOperation);
-    	
-    	while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-    		if(!reader.getLocalName().equals("metric")) {
-    			throw ParseUtils.unexpectedElement(reader);
-    		}
-    		
-    		readMetric(reader, address, list);
-    	}
+        }
+        
+        PathAddress address = parentAddress.append(PathElement.pathElement("source", node));
+        addSourceOperation.get(OP_ADDR).set(address.toModelNode());
+        list.add(addSourceOperation);
+        
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            if(!reader.getLocalName().equals("metric")) {
+                throw ParseUtils.unexpectedElement(reader);
+            }
+            
+            readMetric(reader, address, list);
+        }
     }
     
     private void readMetric(XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
-    	final ModelNode addMetricOperation = Util.createAddOperation();
-    	
-    	String publishName = null;
-    	for (int i = 0; i < reader.getAttributeCount(); i++) {
-    		String attr = reader.getAttributeLocalName(i);
+        final ModelNode addMetricOperation = Util.createAddOperation();
+        
+        String publishName = null;
+        for (int i = 0; i < reader.getAttributeCount(); i++) {
+            String attr = reader.getAttributeLocalName(i);
             String value = reader.getAttributeValue(i);
             if("key".equals(attr)) {
-            	MetricDefinition.KEY.parseAndSetParameter(value, addMetricOperation, reader);
+                MetricDefinition.KEY.parseAndSetParameter(value, addMetricOperation, reader);
             } else if ("publish-name".equals(attr)) {
-            	publishName = value;
+                publishName = value;
             } else {
-            	throw ParseUtils.unexpectedAttribute(reader, i);
+                throw ParseUtils.unexpectedAttribute(reader, i);
             }
-    	}
+        }
 
-    	ParseUtils.requireNoContent(reader);
-    	
-    	if (null == publishName) {
-    		throw ParseUtils.missingRequiredElement(reader, Collections.singleton("publish-name"));
-    	}
-    	
-    	PathAddress address = parentAddress.append(PathElement.pathElement("metric", publishName));
-    	addMetricOperation.get(OP_ADDR).set(address.toModelNode());
-    	list.add(addMetricOperation);
+        ParseUtils.requireNoContent(reader);
+        
+        if (null == publishName) {
+            throw ParseUtils.missingRequiredElement(reader, Collections.singleton("publish-name"));
+        }
+        
+        PathAddress address = parentAddress.append(PathElement.pathElement("metric", publishName));
+        addMetricOperation.get(OP_ADDR).set(address.toModelNode());
+        list.add(addMetricOperation);
     }
 }

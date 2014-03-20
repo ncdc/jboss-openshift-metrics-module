@@ -32,9 +32,9 @@ public class OpenShiftSubsystemExtension implements Extension {
     private static final String RESOURCE_NAME = OpenShiftSubsystemExtension.class.getPackage().getName() + ".LocalDescriptions";
 
     static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefix) {
-    	StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);
+        StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);
         for (String kp : keyPrefix) {
-        	prefix.append('.').append(kp);
+            prefix.append('.').append(kp);
         }
         return new StandardResourceDescriptionResolver(prefix.toString(), RESOURCE_NAME, OpenShiftSubsystemExtension.class.getClassLoader(), true, false);
     }
