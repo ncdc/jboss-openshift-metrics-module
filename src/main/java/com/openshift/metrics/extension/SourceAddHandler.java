@@ -16,10 +16,10 @@ import org.quartz.SchedulerException;
 
 public class SourceAddHandler extends AbstractAddStepHandler implements DescriptionProvider {
     public static final SourceAddHandler INSTANCE = new SourceAddHandler();
-    
+
     public SourceAddHandler() {
     }
-    
+
     @Override
     public ModelNode getModelDescription(Locale locale) {
         // TODO Auto-generated method stub
@@ -36,7 +36,7 @@ public class SourceAddHandler extends AbstractAddStepHandler implements Descript
         MetricsService service = (MetricsService) context.getServiceRegistry(true).getRequiredService(MetricsService.getServiceName()).getValue();
         final String schedule = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getElement(1).getValue();
         final String sourceString = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getElement(2).getValue();
-        boolean mBean = SourceDefinition.MBEAN.resolveModelAttribute(context,model).asBoolean();
+        boolean mBean = SourceDefinition.MBEAN.resolveModelAttribute(context,operation).asBoolean();
         final Source source = new Source(sourceString, mBean);
         try {
             service.addMetricSource(schedule, source);
