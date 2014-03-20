@@ -1,5 +1,6 @@
 package com.openshift.metrics.extension;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 import java.util.Collections;
@@ -40,20 +41,20 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
     @Override
     public void readElement(XMLExtendedStreamReader reader, List<ModelNode> list) throws XMLStreamException {
         ParseUtils.requireNoAttributes(reader);
-        
+
         final PathAddress address = PathAddress.pathAddress(OpenShiftSubsystemExtension.SUBSYSTEM_PATH);
-        final ModelNode subsystem = Util.createAddOperation(address);
+        final ModelNode subsystem = Util.getEmptyOperation(ADD, address.toModelNode());
         list.add(subsystem);
-        
+
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             if(!reader.getLocalName().equals("metric-schedule")) {
                 throw ParseUtils.unexpectedElement(reader);
             }
-            
+
             readMetricSchedule(reader, address, list);
         }
     }
-    
+
     private void readMetricSchedule(XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
         String schedule = null;
         for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -65,11 +66,11 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
                 throw ParseUtils.unexpectedAttribute(reader, i);
             }
         }
-        
-        final PathAddress address = parentAddress.append("schedule", schedule);
-        final ModelNode addScheduleOperation = Util.createAddOperation(address);
+
+        final PathAddress address = parentAddress.append(PathElement.pathElement("schedule", schedule));
+        final ModelNode addScheduleOperation = Util.getEmptyOperation(ADD, address.toModelNode());
         list.add(addScheduleOperation);
-        
+
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             if(!reader.getLocalName().equals("source")) {
                 throw ParseUtils.unexpectedElement(reader);
@@ -77,10 +78,10 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
             readMetricSource(reader, address, list);
         }
     }
-    
+
     private void readMetricSource(XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
         String node = null;
-        final ModelNode addSourceOperation = Util.createAddOperation();
+        final ModelNode addSourceOperation = Util.getEmptyOperation(ADD, null);
         for (int i = 0; i < reader.getAttributeCount(); i++) {
             String attr = reader.getAttributeLocalName(i);
             String value = reader.getAttributeValue(i);
@@ -92,23 +93,23 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
                 throw ParseUtils.unexpectedAttribute(reader, i);
             }
         }
-        
+
         PathAddress address = parentAddress.append(PathElement.pathElement("source", node));
         addSourceOperation.get(OP_ADDR).set(address.toModelNode());
         list.add(addSourceOperation);
-        
+
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             if(!reader.getLocalName().equals("metric")) {
                 throw ParseUtils.unexpectedElement(reader);
             }
-            
+
             readMetric(reader, address, list);
         }
     }
-    
+
     private void readMetric(XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
-        final ModelNode addMetricOperation = Util.createAddOperation();
-        
+        final ModelNode addMetricOperation = Util.getEmptyOperation(ADD, null);
+
         String publishName = null;
         for (int i = 0; i < reader.getAttributeCount(); i++) {
             String attr = reader.getAttributeLocalName(i);
@@ -123,11 +124,11 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
         }
 
         ParseUtils.requireNoContent(reader);
-        
+
         if (null == publishName) {
             throw ParseUtils.missingRequiredElement(reader, Collections.singleton("publish-name"));
         }
-        
+
         PathAddress address = parentAddress.append(PathElement.pathElement("metric", publishName));
         addMetricOperation.get(OP_ADDR).set(address.toModelNode());
         list.add(addMetricOperation);

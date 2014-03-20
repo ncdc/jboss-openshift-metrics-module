@@ -1,5 +1,6 @@
 package com.openshift.metrics.extension;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIBE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import org.jboss.as.controller.Extension;
@@ -23,7 +24,7 @@ public class OpenShiftSubsystemExtension implements Extension {
     public static final String SUBSYSTEM_NAME = "metrics";
 
     protected static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
-    
+
     /**
      * The parser used for parsing our subsystem
      */
@@ -49,7 +50,7 @@ public class OpenShiftSubsystemExtension implements Extension {
     public void initialize(ExtensionContext context) {
         final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, 1, 0);
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(OpenShiftSubsystemDefinition.INSTANCE);
-        registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
+        registration.registerOperationHandler(DESCRIBE, GenericSubsystemDescribeHandler.INSTANCE, GenericSubsystemDescribeHandler.INSTANCE);
 
         subsystem.registerXMLElementWriter(parser);
     }
