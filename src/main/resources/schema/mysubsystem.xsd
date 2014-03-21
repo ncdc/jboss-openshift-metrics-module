@@ -7,7 +7,26 @@
 
     <!-- The subsystem root element -->
     <xs:element name="subsystem" type="subsystemType"/>
-
     <xs:complexType name="subsystemType">
+    	<xs:choice minOccurs="0" maxOccurs="unbounded">
+    		<xs:element name="metric-schedule" type="metric-scheduleType" />
+    	</xs:choice>
+    </xs:complexType>
+    <xs:complexType name="metric-scheduleType">
+    	<xs:choice minOccurs="1" maxOccurs="unbounded">
+    		<xs:element name="source" type="sourceType" />
+    	</xs:choice>
+    	<xs:attribute name="cron" use="required"/>
+    </xs:complexType>
+    <xs:complexType name="sourceType">
+    	<xs:choice minOccurs="1" maxOccurs="unbounded">
+    		<xs:element name="metric" type="metricType" />
+    	</xs:choice>
+  		<xs:attribute name="node" use="required" />
+    	<xs:attribute name="mbean" />
+    </xs:complexType>
+    <xs:complexType name="metricType">
+    	<xs:attribute name="key" use="required" />
+ 		<xs:attribute name="publish-name" use="required" />
     </xs:complexType>
 </xs:schema>
