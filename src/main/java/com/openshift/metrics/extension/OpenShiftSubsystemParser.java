@@ -31,7 +31,6 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
     @Override
     public void writeContent(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
         context.startSubsystemElement(OpenShiftSubsystemExtension.NAMESPACE, false);
-        ModelNode node = context.getModelNode();
         writer.writeEndElement();
     }
 

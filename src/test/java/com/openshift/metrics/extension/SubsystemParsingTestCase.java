@@ -1,6 +1,14 @@
 package com.openshift.metrics.extension;
 
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIBE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+
+import java.util.List;
+
 import junit.framework.Assert;
 
 import org.jboss.as.controller.PathAddress;
@@ -9,14 +17,6 @@ import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
 import org.junit.Test;
-
-import java.util.List;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIBE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 
 /**
@@ -38,8 +38,13 @@ public class SubsystemParsingTestCase extends AbstractSubsystemTest {
     public void testParseSubsystem() throws Exception {
         //Parse the subsystem xml into operations
         String subsystemXml =
-                "<subsystem xmlns=\"" + OpenShiftSubsystemExtension.NAMESPACE + "\">" +
-                        "</subsystem>";
+                "<subsystem xmlns=\"" + OpenShiftSubsystemExtension.NAMESPACE + "\">"                   +
+                "   <metric-schedule cron=\"*/5 * * * * ?\">"                                           +
+                "       <source node=\"core-service=platform-mbean/type=memory-pool/name=PS_Old_Gen\">"+
+                "           <metric key=\"usage.used\" publish-name=\"oldgen.used\" />"                 +
+                "       </source>"                                                                      +
+                "   </metric-schedule>"                                                                 +
+                "</subsystem>";
         List<ModelNode> operations = super.parse(subsystemXml);
 
         ///Check that we have the expected number of operations
@@ -62,8 +67,13 @@ public class SubsystemParsingTestCase extends AbstractSubsystemTest {
     public void testInstallIntoController() throws Exception {
         //Parse the subsystem xml and install into the controller
         String subsystemXml =
-                "<subsystem xmlns=\"" + OpenShiftSubsystemExtension.NAMESPACE + "\">" +
-                        "</subsystem>";
+                "<subsystem xmlns=\"" + OpenShiftSubsystemExtension.NAMESPACE + "\">"                   +
+                "   <metric-schedule cron=\"*/5 * * * * ?\">"                                           +
+                "       <source node=\"core-service=platform-mbean/type=memory-pool/name=PS_Old_Gen\">" +
+                "           <metric key=\"usage.used\" publish-name=\"oldgen.used\" />"                 +
+                "       </source>"                                                                      +
+                "   </metric-schedule>"                                                                 +
+                "</subsystem>";
         KernelServices services = super.installInController(subsystemXml);
 
         //Read the whole model and make sure it looks as expected
@@ -79,8 +89,13 @@ public class SubsystemParsingTestCase extends AbstractSubsystemTest {
     public void testParseAndMarshalModel() throws Exception {
         //Parse the subsystem xml and install into the first controller
         String subsystemXml =
-                "<subsystem xmlns=\"" + OpenShiftSubsystemExtension.NAMESPACE + "\">" +
-                        "</subsystem>";
+                "<subsystem xmlns=\"" + OpenShiftSubsystemExtension.NAMESPACE + "\">"                   +
+                "   <metric-schedule cron=\"*/5 * * * * ?\">"                                           +
+                "       <source node=\"test-service\">" +
+                "           <metric key=\"usage.used\" publish-name=\"oldgen.used\" />"                 +
+                "       </source>"                                                                      +
+                "   </metric-schedule>"                                                                 +
+                "</subsystem>";
         KernelServices servicesA = super.installInController(subsystemXml);
         //Get the model and the persisted xml from the first controller
         ModelNode modelA = servicesA.readWholeModel();
@@ -102,8 +117,13 @@ public class SubsystemParsingTestCase extends AbstractSubsystemTest {
     public void testDescribeHandler() throws Exception {
         //Parse the subsystem xml and install into the first controller
         String subsystemXml =
-                "<subsystem xmlns=\"" + OpenShiftSubsystemExtension.NAMESPACE + "\">" +
-                        "</subsystem>";
+                "<subsystem xmlns=\"" + OpenShiftSubsystemExtension.NAMESPACE + "\">"                   +
+                "   <metric-schedule cron=\"*/5 * * * * ?\">"                                           +
+                "       <source node=\"core-service=platform-mbean/type=memory-pool/name=PS_Old_Gen\">" +
+                "           <metric key=\"usage.used\" publish-name=\"oldgen.used\" />"                 +
+                "       </source>"                                                                      +
+                "   </metric-schedule>"                                                                 +
+                "</subsystem>";
         KernelServices servicesA = super.installInController(subsystemXml);
         //Get the model and the describe operations from the first controller
         ModelNode modelA = servicesA.readWholeModel();
@@ -130,8 +150,13 @@ public class SubsystemParsingTestCase extends AbstractSubsystemTest {
     public void testSubsystemRemoval() throws Exception {
         //Parse the subsystem xml and install into the first controller
         String subsystemXml =
-                "<subsystem xmlns=\"" + OpenShiftSubsystemExtension.NAMESPACE + "\">" +
-                        "</subsystem>";
+                "<subsystem xmlns=\"" + OpenShiftSubsystemExtension.NAMESPACE + "\">"                   +
+                "   <metric-schedule cron=\"*/5 * * * * ?\">"                                           +
+                "       <source node=\"core-service=platform-mbean/type=memory-pool/name=PS_Old_Gen\">" +
+                "           <metric key=\"usage.used\" publish-name=\"oldgen.used\" />"                 +
+                "       </source>"                                                                      +
+                "   </metric-schedule>"                                                                 +
+                "</subsystem>";
         KernelServices services = super.installInController(subsystemXml);
         //Checks that the subsystem was removed from the model
         super.assertRemoveSubsystemResources(services);
