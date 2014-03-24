@@ -15,6 +15,7 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
@@ -31,7 +32,12 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
     @Override
     public void writeContent(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
         context.startSubsystemElement(OpenShiftSubsystemExtension.NAMESPACE, false);
-        //TODO!!!
+        ModelNode node = context.getModelNode();
+        ModelNode schedules = node.get("schedule");
+        for(Property schedule : schedules.asPropertyList()){
+            writer.writeStartElement("metric-schedule");
+            
+        }
         writer.writeEndElement();
     }
 

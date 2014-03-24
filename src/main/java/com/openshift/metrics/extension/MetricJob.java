@@ -7,8 +7,17 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.util.Map;
 import java.util.StringTokenizer;
+
+import javax.management.AttributeNotFoundException;
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanException;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import javax.management.ReflectionException;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -69,7 +78,7 @@ public class MetricJob implements Job {
         // loop through each source, processing all of each source's metrics
         for (Source source : sources.keySet()) {
             if(source.ismBean()) {
-                //                doMBeanSource(source);
+                doMBeanSource(source,sources.get(source));
             } else {
                 //TODO consider switching jobDataMap(METRIC_SOURCES) to a List or Set
                 //and add the metrics to the Source class itself
@@ -77,7 +86,56 @@ public class MetricJob implements Job {
             }
         }
     }
+    private void doMBeanSource(Source source, Map<String,String> metrics) {
+        // Get the mBeanServer to access source
+        MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
+        // Iterate over all metrics in source
+        for(String originalKey : metrics.keySet()) {
+
+            // original key can be either one or two levels deep i.e. "name" or "usage.cpu"
+            String key = originalKey;
+
+            String subkey = null;
+            // extract subkey if exists
+
+            final int dotIndex = key.indexOf('.');
+            if(dotIndex > -1) {
+
+                // if we found a . then there's a subkey (e.g. bytes from usage.bytes)
+                subkey = key.substring(dotIndex + 1);
+
+                // update key to be the actual attribute name (e.g. usage from usage.bytes)
+                key = key.substring(0, dotIndex);
+            }
+
+            // Execute getAttribute on mBeanServer with source
+            try {
+                ObjectName name = new ObjectName(source.getPath());
+                Object result = mBeanServer.getAttribute(name, key);
+                if(subkey != null) {
+                    result = ((Map)result).get(key);
+                }
+                String metricValue  = result.toString();
+                publishMetric(metrics.get(originalKey),metricValue);
+            } catch (AttributeNotFoundException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (InstanceNotFoundException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (MBeanException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (ReflectionException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (MalformedObjectNameException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+    }
     private void doNativeSource(Source source, Map<String, String> metrics, JobExecutionContext context) {
         ModelControllerClient modelControllerClient = getModelControllerClient(context);
 
@@ -146,4 +204,5 @@ public class MetricJob implements Job {
         //TODO switch to syslog?
         log.info(publishName + "=" + metricValue);
     }
+
 }
