@@ -39,11 +39,7 @@ public class SubsystemParsingTestCase extends AbstractSubsystemTest {
         //Parse the subsystem xml into operations
         String subsystemXml =
                 "<subsystem xmlns=\"" + OpenShiftSubsystemExtension.NAMESPACE + "\">"                   +
-                "   <metric-schedule cron=\"*/5 * * * * ?\">"                                           +
-                "       <source node=\"core-service=platform-mbean/type=memory-pool/name=PS_Old_Gen\">"+
-                "           <metric key=\"usage.used\" publish-name=\"oldgen.used\" />"                 +
-                "       </source>"                                                                      +
-                "   </metric-schedule>"                                                                 +
+
                 "</subsystem>";
         List<ModelNode> operations = super.parse(subsystemXml);
 
@@ -90,7 +86,7 @@ public class SubsystemParsingTestCase extends AbstractSubsystemTest {
         //Parse the subsystem xml and install into the first controller
         String subsystemXml =
                 "<subsystem xmlns=\"" + OpenShiftSubsystemExtension.NAMESPACE + "\">"                   +
-                "   <metric-schedule cron=\"*/5 * * * * ?\">"                                           +
+                "   <metric-schedule cron=\"1%201%201%201%201%20?\">"                                           +
                 "       <source node=\"test-service\">" +
                 "           <metric key=\"usage.used\" publish-name=\"oldgen.used\" />"                 +
                 "       </source>"                                                                      +
