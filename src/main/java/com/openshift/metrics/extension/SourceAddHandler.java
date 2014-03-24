@@ -29,6 +29,7 @@ public class SourceAddHandler extends AbstractAddStepHandler implements Descript
     @Override
     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
         model.get(Constants.METRIC).setEmptyList();
+        model.get(Constants.MBEAN).set(operation.get(Constants.MBEAN));
     }
 
     @Override

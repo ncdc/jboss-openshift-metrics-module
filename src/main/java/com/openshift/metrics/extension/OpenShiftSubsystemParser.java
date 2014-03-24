@@ -37,11 +37,49 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
         context.startSubsystemElement(OpenShiftSubsystemExtension.NAMESPACE, false);
         ModelNode node = context.getModelNode();
         ModelNode schedules = node.get(Constants.SCHEDULE);
-        for(Property schedule : schedules.asPropertyList()){
+        writeSchedules(writer, schedules);
+        writer.writeEndElement();
+    }
+
+    private void writeSchedules(XMLExtendedStreamWriter writer, ModelNode schedules) throws XMLStreamException {
+        for(ModelNode schedule : schedules.asList()){
             writer.writeStartElement(METRIC_SCHEDULE);
+            final Property scheduleProperty = schedule.asProperty();
+            writer.writeAttribute(CRON, scheduleProperty.getName().replaceAll("_", " "));
+
+            ModelNode sources = scheduleProperty.getValue().get(Constants.SOURCE);
+            writeSources(writer, sources);
+
+            writer.writeEndElement();
 
         }
-        writer.writeEndElement();
+    }
+
+    private void writeSources(XMLExtendedStreamWriter writer, ModelNode sources) throws XMLStreamException {
+        for(String sourcePath : sources.keys()) {
+            ModelNode source = sources.get(sourcePath);
+            writer.writeStartElement(Constants.SOURCE);
+            writer.writeAttribute(Constants.NODE, sourcePath);
+            if(source.hasDefined(Constants.MBEAN) && source.get(Constants.MBEAN).asBoolean()) {
+                writer.writeAttribute(Constants.MBEAN, "true");
+            }
+
+            ModelNode metrics = source.get(Constants.METRIC);
+            writeMetrics(writer, metrics);
+
+            writer.writeEndElement();
+        }
+    }
+
+    private void writeMetrics(XMLExtendedStreamWriter writer, ModelNode metrics) throws XMLStreamException {
+        for(String publishName : metrics.keys()) {
+            ModelNode metric = metrics.get(publishName);
+            String key = metric.get(Constants.KEY).asString();
+            writer.writeStartElement(Constants.METRIC);
+            writer.writeAttribute(Constants.KEY, key);
+            writer.writeAttribute(Constants.PUBLISH_NAME, publishName);
+            writer.writeEndElement();
+        }
     }
 
     /**
