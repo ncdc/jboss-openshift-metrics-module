@@ -26,6 +26,9 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementReader<List<ModelNode>>, XMLElementWriter<SubsystemMarshallingContext> {
 
+    private static final String CRON = "cron";
+    private static final String METRIC_SCHEDULE = "metric-schedule";
+
     /**
      * {@inheritDoc}
      */
@@ -33,10 +36,10 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
     public void writeContent(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
         context.startSubsystemElement(OpenShiftSubsystemExtension.NAMESPACE, false);
         ModelNode node = context.getModelNode();
-        ModelNode schedules = node.get("schedule");
+        ModelNode schedules = node.get(Constants.SCHEDULE);
         for(Property schedule : schedules.asPropertyList()){
-            writer.writeStartElement("metric-schedule");
-            
+            writer.writeStartElement(METRIC_SCHEDULE);
+
         }
         writer.writeEndElement();
     }
@@ -53,7 +56,7 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
         list.add(subsystem);
 
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            if(!reader.getLocalName().equals("metric-schedule")) {
+            if(!reader.getLocalName().equals(METRIC_SCHEDULE)) {
                 throw ParseUtils.unexpectedElement(reader);
             }
 
@@ -66,19 +69,20 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
         for (int i = 0; i < reader.getAttributeCount(); i++) {
             String attr = reader.getAttributeLocalName(i);
             String value = reader.getAttributeValue(i);
-            if("cron".equals(attr)) {
-                schedule = value;
+            if(CRON.equals(attr)) {
+                // need to convert spaces to underscores
+                schedule = value.replaceAll(" ", "_");
             } else {
                 throw ParseUtils.unexpectedAttribute(reader, i);
             }
         }
 
-        final PathAddress address = parentAddress.append(PathElement.pathElement("schedule", schedule));
+        final PathAddress address = parentAddress.append(PathElement.pathElement(Constants.SCHEDULE, schedule));
         final ModelNode addScheduleOperation = Util.getEmptyOperation(ADD, address.toModelNode());
         list.add(addScheduleOperation);
 
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            if(!reader.getLocalName().equals("source")) {
+            if(!reader.getLocalName().equals(Constants.SOURCE)) {
                 throw ParseUtils.unexpectedElement(reader);
             }
             readMetricSource(reader, address, list);
@@ -91,21 +95,21 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
         for (int i = 0; i < reader.getAttributeCount(); i++) {
             String attr = reader.getAttributeLocalName(i);
             String value = reader.getAttributeValue(i);
-            if("node".equals(attr)) {
+            if(Constants.NODE.equals(attr)) {
                 node= value;
-            } else if("mbean".equals(attr)) {
+            } else if(Constants.MBEAN.equals(attr)) {
                 SourceDefinition.MBEAN.parseAndSetParameter(value, addSourceOperation, reader);
             } else {
                 throw ParseUtils.unexpectedAttribute(reader, i);
             }
         }
 
-        PathAddress address = parentAddress.append(PathElement.pathElement("source", node));
+        PathAddress address = parentAddress.append(PathElement.pathElement(Constants.SOURCE, node));
         addSourceOperation.get(OP_ADDR).set(address.toModelNode());
         list.add(addSourceOperation);
 
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            if(!reader.getLocalName().equals("metric")) {
+            if(!reader.getLocalName().equals(Constants.METRIC)) {
                 throw ParseUtils.unexpectedElement(reader);
             }
 
@@ -120,9 +124,9 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
         for (int i = 0; i < reader.getAttributeCount(); i++) {
             String attr = reader.getAttributeLocalName(i);
             String value = reader.getAttributeValue(i);
-            if("key".equals(attr)) {
+            if(Constants.KEY.equals(attr)) {
                 MetricDefinition.KEY.parseAndSetParameter(value, addMetricOperation, reader);
-            } else if ("publish-name".equals(attr)) {
+            } else if (Constants.PUBLISH_NAME.equals(attr)) {
                 publishName = value;
             } else {
                 throw ParseUtils.unexpectedAttribute(reader, i);
@@ -132,10 +136,10 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
         ParseUtils.requireNoContent(reader);
 
         if (null == publishName) {
-            throw ParseUtils.missingRequiredElement(reader, Collections.singleton("publish-name"));
+            throw ParseUtils.missingRequiredElement(reader, Collections.singleton(Constants.PUBLISH_NAME));
         }
 
-        PathAddress address = parentAddress.append(PathElement.pathElement("metric", publishName));
+        PathAddress address = parentAddress.append(PathElement.pathElement(Constants.METRIC, publishName));
         addMetricOperation.get(OP_ADDR).set(address.toModelNode());
         list.add(addMetricOperation);
     }

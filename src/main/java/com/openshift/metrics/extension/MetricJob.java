@@ -18,6 +18,7 @@ import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
+import javax.management.openmbean.CompositeData;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -73,48 +74,61 @@ public class MetricJob implements Job {
         final JobDataMap jobDataMap = context.getMergedJobDataMap();
 
         // grab the sources
-        Map<Source, Map<String, String>> sources = (Map<Source, Map<String, String>>) jobDataMap.get(METRIC_SOURCES);
+        @SuppressWarnings("unchecked")
+        Map<String, Source> sources = (Map<String, Source>) jobDataMap.get(METRIC_SOURCES);
 
         // loop through each source, processing all of each source's metrics
-        for (Source source : sources.keySet()) {
+        for (String sourcePath : sources.keySet()) {
+            Source source = sources.get(sourcePath);
             if(source.ismBean()) {
-                doMBeanSource(source,sources.get(source));
+                doMBeanSource(source);
             } else {
-                //TODO consider switching jobDataMap(METRIC_SOURCES) to a List or Set
-                //and add the metrics to the Source class itself
-                doNativeSource(source, sources.get(source), context);
+                doNativeSource(source, context);
             }
         }
     }
-    private void doMBeanSource(Source source, Map<String,String> metrics) {
+
+    private String[] extractKeyAndSubkey(String key) {
+        String subkey = null;
+        // extract subkey if exists
+
+        // original key can be either one or two levels deep i.e. "name" or "usage.cpu"
+        final int dotIndex = key.indexOf('.');
+        if(dotIndex > -1) {
+
+            // if we found a . then there's a subkey (e.g. bytes from usage.bytes)
+            subkey = key.substring(dotIndex + 1);
+
+            // update key to be the actual attribute name (e.g. usage from usage.bytes)
+            key = key.substring(0, dotIndex);
+        }
+
+        return new String[] {key, subkey};
+    }
+
+    private void doMBeanSource(Source source) {
         // Get the mBeanServer to access source
         MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
+        Map<String,String> metrics = source.getMetrics();
+
         // Iterate over all metrics in source
         for(String originalKey : metrics.keySet()) {
-
-            // original key can be either one or two levels deep i.e. "name" or "usage.cpu"
-            String key = originalKey;
-
-            String subkey = null;
-            // extract subkey if exists
-
-            final int dotIndex = key.indexOf('.');
-            if(dotIndex > -1) {
-
-                // if we found a . then there's a subkey (e.g. bytes from usage.bytes)
-                subkey = key.substring(dotIndex + 1);
-
-                // update key to be the actual attribute name (e.g. usage from usage.bytes)
-                key = key.substring(0, dotIndex);
-            }
+            String keyAndSubkey[] = extractKeyAndSubkey(originalKey);
+            String key = keyAndSubkey[0];
+            String subkey = keyAndSubkey[1];
 
             // Execute getAttribute on mBeanServer with source
             try {
                 ObjectName name = new ObjectName(source.getPath());
                 Object result = mBeanServer.getAttribute(name, key);
                 if(subkey != null) {
-                    result = ((Map)result).get(key);
+                    if(result instanceof CompositeData) {
+                        CompositeData cd = (CompositeData) result;
+                        if(cd.containsKey(subkey)) {
+                            result = cd.get(subkey);
+                        }
+                    }
                 }
                 String metricValue  = result.toString();
                 publishMetric(metrics.get(originalKey),metricValue);
@@ -136,7 +150,7 @@ public class MetricJob implements Job {
             }
         }
     }
-    private void doNativeSource(Source source, Map<String, String> metrics, JobExecutionContext context) {
+    private void doNativeSource(Source source, JobExecutionContext context) {
         ModelControllerClient modelControllerClient = getModelControllerClient(context);
 
         if(null == modelControllerClient) {
@@ -153,26 +167,13 @@ public class MetricJob implements Job {
         // set the address appropriately
         setAddressFromSource(op, source.getPath());
 
+        Map<String,String> metrics = source.getMetrics();
+
         // loop through them
         for(String originalKey : metrics.keySet()) {
-            // originalKey could be something like profile-name or it could be
-            // an index into a map, such as usage.bytes
-            String key = originalKey;
-
-            // subkey will represent the index into a map, if it exists
-            String subkey = null;
-
-            //TODO consider supporting indexing into arrays
-            //          final int leftBracketIndex = key.indexOf('[');
-
-            final int dotIndex = key.indexOf('.');
-            if(dotIndex > -1) {
-                // if we found a . then there's a subkey (e.g. bytes from usage.bytes)
-                subkey = key.substring(dotIndex + 1);
-
-                // update key to be the actual attribute name (e.g. usage from usage.bytes)
-                key = key.substring(0, dotIndex);
-            }
+            String keyAndSubkey[] = extractKeyAndSubkey(originalKey);
+            String key = keyAndSubkey[0];
+            String subkey = keyAndSubkey[1];
 
             // set the name of the attribute we want
             op.get(ModelDescriptionConstants.NAME).set(key);

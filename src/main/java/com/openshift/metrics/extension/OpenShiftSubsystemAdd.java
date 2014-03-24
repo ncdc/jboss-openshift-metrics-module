@@ -22,14 +22,14 @@ class OpenShiftSubsystemAdd extends AbstractAddStepHandler{
     /** {@inheritDoc} */
     @Override
     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        model.get("schedule").setEmptyList();
+        model.get(Constants.SCHEDULE).setEmptyList();
     }
 
     /** {@inheritDoc} */
     @Override
     protected void performRuntime(org.jboss.as.controller.OperationContext context, ModelNode operation, ModelNode model, org.jboss.as.controller.ServiceVerificationHandler verificationHandler, java.util.List<org.jboss.msc.service.ServiceController<?>> newControllers) throws OperationFailedException {
         MetricsService service = new MetricsService();
-        
+
         ServiceController<MetricsService> controller = context.getServiceTarget()
                 .addService(MetricsService.getServiceName(), service)
                 .addDependency(DependencyType.REQUIRED,
@@ -39,7 +39,7 @@ class OpenShiftSubsystemAdd extends AbstractAddStepHandler{
                 .addListener(verificationHandler)
                 .setInitialMode(Mode.ACTIVE)
                 .install();
-        
+
         newControllers.add(controller);
     }
 }

@@ -37,9 +37,7 @@ public class MetricAddHandler extends AbstractAddStepHandler implements Descript
         String key = MetricDefinition.KEY.resolveModelAttribute(context, model).asString();
         // subsystem=metrics/schedule=0 * * * * */source=src/metric=publishName
         final String schedule = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getElement(1).getValue();
-        final String sourceString = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getElement(2).getValue();
-        boolean mBean = SourceDefinition.MBEAN.resolveModelAttribute(context,operation).asBoolean();
-        final Source source = new Source(sourceString, mBean);
+        final String source = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getElement(2).getValue();
         String publishName = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getElement(3).getValue();
         try {
             service.addMetric(schedule, source, key, publishName);

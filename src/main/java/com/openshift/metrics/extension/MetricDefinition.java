@@ -9,7 +9,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelType;
 
 public class MetricDefinition extends SimpleResourceDefinition {
-    public static final PathElement METRIC_PATH = PathElement.pathElement("metric");
+    public static final PathElement METRIC_PATH = PathElement.pathElement(Constants.METRIC);
 
     public static final MetricDefinition INSTANCE = new MetricDefinition();
 
@@ -22,7 +22,7 @@ public class MetricDefinition extends SimpleResourceDefinition {
                 .build();
 
     private MetricDefinition() {
-        super(METRIC_PATH, OpenShiftSubsystemExtension.getResourceDescriptionResolver("schedule", "source", "metric"), MetricAddHandler.INSTANCE, MetricRemoveHandler.INSTANCE);
+        super(METRIC_PATH, OpenShiftSubsystemExtension.getResourceDescriptionResolver(Constants.SCHEDULE, Constants.SOURCE, Constants.METRIC), MetricAddHandler.INSTANCE, MetricRemoveHandler.INSTANCE);
     }
 
     @Override

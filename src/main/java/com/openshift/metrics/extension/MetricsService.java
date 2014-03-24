@@ -1,5 +1,8 @@
 package com.openshift.metrics.extension;
 
+import static com.openshift.metrics.extension.Constants.METRIC_SOURCES;
+import static com.openshift.metrics.extension.Constants.MODEL_CONTROLLER_CLIENT;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -29,18 +32,18 @@ import org.quartz.impl.StdSchedulerFactory;
 
 /**
  * Service that handles scheduling jobs that gather and publish metrics.
- * 
+ *
  * @author Andy Goldstein <agoldste@redhat.com>
  */
 public class MetricsService implements Service<MetricsService> {
     private Scheduler scheduler;
-    
+
     private final InjectedValue<ModelController> injectedModelController = new InjectedValue<ModelController>();
-    
+
     private ModelControllerClient modelControllerClient;
-    
+
     private ExecutorService managementOperationExecutor;
-    
+
     public MetricsService() {
         try {
             // I originally had this in start() but it looks like start() and
@@ -50,7 +53,7 @@ public class MetricsService implements Service<MetricsService> {
             // in an NPE because the scheduler was null. Not sure of the best way
             // to do this...
             scheduler = StdSchedulerFactory.getDefaultScheduler();
-        
+
             // Is this the most appropriate executor type?
             managementOperationExecutor = Executors.newSingleThreadExecutor(new ThreadFactory() {
                 @Override
@@ -66,7 +69,7 @@ public class MetricsService implements Service<MetricsService> {
             e.printStackTrace();
         }
     }
-    
+
     /**
      * @see org.jboss.msc.value.Value#getValue()
      */
@@ -84,11 +87,11 @@ public class MetricsService implements Service<MetricsService> {
             // should we just have a single ModelControllerClient, or a pool, or
             // create/destroy them on the fly as jobs use them?
             modelControllerClient = injectedModelController.getValue().createClient(managementOperationExecutor);
-            
+
             // is this the best way to share the modelControllerClient with jobs?
             // is it ok for jobs to share a single client?
-            scheduler.getContext().put("modelControllerClient", modelControllerClient);
-            
+            scheduler.getContext().put(MODEL_CONTROLLER_CLIENT, modelControllerClient);
+
             scheduler.start();
         } catch(SchedulerException e) {
             throw new StartException("Error starting scheduler", e);
@@ -111,16 +114,16 @@ public class MetricsService implements Service<MetricsService> {
 
     /**
      * Get this service's {@link ServiceName} for the MSC
-     * 
+     *
      * @return this service's {@link ServiceName}
      */
     public static ServiceName getServiceName() {
-        return ServiceName.JBOSS.append("metrics");
+        return ServiceName.JBOSS.append(Constants.METRICS_SERVICE_NAME);
     }
 
     /**
      * Create an empty job for the given cron schedule
-     * 
+     *
      * @param schedule a cron expression
      * @return the created {@link JobDetail}
      * @throws SchedulerException
@@ -130,24 +133,24 @@ public class MetricsService implements Service<MetricsService> {
                                   .withIdentity(schedule)
                                   .storeDurably()
                                   .build();
-        
+
         scheduler.addJob(job, false);
         return job;
     }
-    
+
     /**
      * Remove a job for the given schedule
-     * 
+     *
      * @param schedule a cron expression
      * @throws SchedulerException
      */
     public void removeJob(String schedule) throws SchedulerException {
         scheduler.deleteJob(JobKey.jobKey(schedule));
     }
-    
+
     /**
      * Add a metric source to the job for the given schedule
-     * 
+     *
      * @param schedule a cron expression
      * @param source a path to either a {@link ResourceDefinition} or an MBean
      * @throws SchedulerException
@@ -155,78 +158,81 @@ public class MetricsService implements Service<MetricsService> {
     public void addMetricSource(String schedule, Source source) throws SchedulerException {
         final JobDetail job = scheduler.getJobDetail(JobKey.jobKey(schedule));
         final JobDataMap jobDataMap = job.getJobDataMap();
-        Map<Source, Map<String, String>> metricSourceMap = (Map<Source, Map<String, String>>) jobDataMap.get("metricSources");
+        @SuppressWarnings("unchecked")
+        Map<String, Source> metricSourceMap = (Map<String, Source>) jobDataMap.get(METRIC_SOURCES);
         if(null == metricSourceMap) {
-            metricSourceMap = new HashMap<Source, Map<String, String>>();
-            jobDataMap.put("metricSources", metricSourceMap);
+            metricSourceMap = new HashMap<String, Source>();
+            jobDataMap.put(METRIC_SOURCES, metricSourceMap);
         }
-        metricSourceMap.put(source, new HashMap<String, String>());
+        metricSourceMap.put(source.getPath(), source);
         scheduler.addJob(job, true);
     }
-    
+
     /**
      * Remove a metric source from the job for the given schedule
      * @param schedule a cron expression
      * @param source a path to either a {@link ResourceDefinition} or an MBean
      * @throws SchedulerException
      */
-    public void removeMetricSource(String schedule, Source source) throws SchedulerException {
+    public void removeMetricSource(String schedule, String source) throws SchedulerException {
         final JobDetail job = scheduler.getJobDetail(JobKey.jobKey(schedule));
         final JobDataMap jobDataMap = job.getJobDataMap();
-        Map<Source,Map<String, String>> metricSourceMap = (Map<Source, Map<String, String>>) jobDataMap.get("metricSources");
+        @SuppressWarnings("unchecked")
+        Map<String, Source> metricSourceMap = (Map<String, Source>) jobDataMap.get(METRIC_SOURCES);
         metricSourceMap.remove(source);
         scheduler.addJob(job, true);
     }
-    
+
     /**
      * Add a metric to the job for the given schedule and source
-     * 
+     *
      * @param schedule a cron expression
-     * @param source a path to either a {@link ResourceDefinition} or an MBean
+     * @param sourcePath a path to either a {@link ResourceDefinition} or an MBean
      * @param key name of an attribute for the source to look up
      * @param publishName name to use when publishing this metric
      * @throws SchedulerException
      */
-    public void addMetric(String schedule, Source source, String key, String publishName) throws SchedulerException {
+    public void addMetric(String schedule, String sourcePath, String key, String publishName) throws SchedulerException {
         JobDetail job = scheduler.getJobDetail(JobKey.jobKey(schedule));
-        
+
         final JobDataMap jobDataMap = job.getJobDataMap();
-        //changed this to Map<Source,Map<String, String>>
-        Map<Source,Map<String, String>> metricSourceMap = (Map<Source, Map<String, String>>) jobDataMap.get("metricSources");
-        final Map<String, String> metrics = metricSourceMap.get(source);
-        metrics.put(key, publishName);
-        
+        @SuppressWarnings("unchecked")
+        Map<String, Source> metricSourceMap = (Map<String, Source>) jobDataMap.get(METRIC_SOURCES);
+        final Source source = metricSourceMap.get(sourcePath);
+        source.addMetric(key, publishName);
+
         scheduler.addJob(job, true);
 
         TriggerKey triggerKey = TriggerKey.triggerKey(schedule);
-        
+
         if(!scheduler.checkExists(triggerKey)) {
             Trigger trigger = TriggerBuilder.newTrigger()
                     .withIdentity(triggerKey)
                     .forJob(job)
-                    .withSchedule(CronScheduleBuilder.cronSchedule(schedule))
+                    .withSchedule(CronScheduleBuilder.cronSchedule(schedule.replaceAll("_", " ")))
                     .build();
-            
+
             scheduler.scheduleJob(trigger);
         }
     }
-    
+
     /**
      * Remove a metric from the job for the given schedule and source
-     * 
+     *
      * @param schedule a cron expression
-     * @param source a path to either a {@link ResourceDefinition} or an MBean
+     * @param sourcePath a path to either a {@link ResourceDefinition} or an MBean
      * @param key name of an attribute for the source to look up
      * @param publishName name to use when publishing this metric
      * @throws SchedulerException
      */
-    public void removeMetric(String schedule, Source source, String key, String publishName) throws SchedulerException {
+    public void removeMetric(String schedule, String sourcePath, String key, String publishName) throws SchedulerException {
         JobDetail job = scheduler.getJobDetail(JobKey.jobKey(schedule));
         final JobDataMap jobDataMap = job.getJobDataMap();
-        Map<Source,Map<String, String>> metricSourceMap = (Map<Source, Map<String, String>>) jobDataMap.get("metricSources");
-        final Map<String, String> metrics = metricSourceMap.get(source);
-        metrics.remove(key);
-        
+        @SuppressWarnings("unchecked")
+        Map<String, Source> metricSourceMap = (Map<String, Source>) jobDataMap.get(METRIC_SOURCES);
+        final Source source = metricSourceMap.get(sourcePath);
+        source.removeMetric(key);
+
         scheduler.addJob(job, true);
     }
 

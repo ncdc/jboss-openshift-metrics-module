@@ -13,10 +13,10 @@ import org.quartz.SchedulerException;
 
 public class SourceRemoveHandler extends AbstractRemoveStepHandler implements DescriptionProvider {
     public static final SourceRemoveHandler INSTANCE = new SourceRemoveHandler();
-    
+
     public SourceRemoveHandler() {
     }
-    
+
     @Override
     public ModelNode getModelDescription(Locale locale) {
         // TODO Auto-generated method stub
@@ -27,9 +27,7 @@ public class SourceRemoveHandler extends AbstractRemoveStepHandler implements De
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         MetricsService service = (MetricsService) context.getServiceRegistry(true).getRequiredService(MetricsService.getServiceName()).getValue();
         final String schedule = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getElement(1).getValue();
-        final String sourceString = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getElement(2).getValue();
-        boolean mBean = SourceDefinition.MBEAN.resolveModelAttribute(context,model).asBoolean();
-        final Source source = new Source(sourceString, mBean);
+        final String source = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getElement(2).getValue();
         try {
             service.removeMetricSource(schedule, source);
         } catch (SchedulerException e) {

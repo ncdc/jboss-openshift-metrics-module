@@ -17,10 +17,10 @@ import org.quartz.SchedulerException;
 
 public class ScheduleAddHandler extends AbstractAddStepHandler implements DescriptionProvider {
     public static final ScheduleAddHandler INSTANCE = new ScheduleAddHandler();
-    
+
     public ScheduleAddHandler() {
     }
-    
+
     @Override
     public ModelNode getModelDescription(Locale locale) {
         // TODO Auto-generated method stub
@@ -29,7 +29,7 @@ public class ScheduleAddHandler extends AbstractAddStepHandler implements Descri
 
     @Override
     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        model.get("source").setEmptyList();
+        model.get(Constants.SOURCE).setEmptyList();
     }
 
     @Override
