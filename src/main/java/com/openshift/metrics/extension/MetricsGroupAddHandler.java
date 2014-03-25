@@ -18,10 +18,10 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.quartz.SchedulerException;
 
-public class ScheduleAddHandler extends AbstractAddStepHandler implements DescriptionProvider {
-    public static final ScheduleAddHandler INSTANCE = new ScheduleAddHandler();
+public class MetricsGroupAddHandler extends AbstractAddStepHandler implements DescriptionProvider {
+    public static final MetricsGroupAddHandler INSTANCE = new MetricsGroupAddHandler();
 
-    public ScheduleAddHandler() {
+    public MetricsGroupAddHandler() {
     }
 
     @Override

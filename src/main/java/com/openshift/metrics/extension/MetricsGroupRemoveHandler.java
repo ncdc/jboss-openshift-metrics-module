@@ -15,10 +15,10 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.dmr.ModelNode;
 import org.quartz.SchedulerException;
 
-public class ScheduleRemoveHandler extends AbstractRemoveStepHandler implements DescriptionProvider {
-    public static final ScheduleRemoveHandler INSTANCE = new ScheduleRemoveHandler();
+public class MetricsGroupRemoveHandler extends AbstractRemoveStepHandler implements DescriptionProvider {
+    public static final MetricsGroupRemoveHandler INSTANCE = new MetricsGroupRemoveHandler();
 
-    public ScheduleRemoveHandler() {
+    public MetricsGroupRemoveHandler() {
     }
 
     @Override

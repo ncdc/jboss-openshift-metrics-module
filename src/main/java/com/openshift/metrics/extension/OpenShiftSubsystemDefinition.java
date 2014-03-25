@@ -28,6 +28,6 @@ public class OpenShiftSubsystemDefinition extends SimpleResourceDefinition {
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
         super.registerChildren(resourceRegistration);
-        resourceRegistration.registerSubModel(ScheduleDefinition.INSTANCE);
+        resourceRegistration.registerSubModel(MetricsGroupDefinition.INSTANCE);
     }
 }
