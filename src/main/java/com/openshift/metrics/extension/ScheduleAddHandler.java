@@ -1,15 +1,18 @@
 package com.openshift.metrics.extension;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 import java.util.List;
 import java.util.Locale;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceVerificationHandler;
+import org.jboss.as.controller.descriptions.DefaultOperationDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
@@ -23,13 +26,13 @@ public class ScheduleAddHandler extends AbstractAddStepHandler implements Descri
 
     @Override
     public ModelNode getModelDescription(Locale locale) {
-        // TODO Auto-generated method stub
-        return null;
+        final DefaultOperationDescriptionProvider delegate = new DefaultOperationDescriptionProvider(ADD, OpenShiftSubsystemExtension.getResourceDescriptionResolver(Constants.METRICS_GROUP), (AttributeDefinition[])null);
+        return delegate.getModelDescription(locale);
     }
 
     @Override
     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        model.get(Constants.SOURCE).setEmptyList();
+        model.setEmptyObject();//get(Constants.SOURCE).setEmptyList();
     }
 
     @Override

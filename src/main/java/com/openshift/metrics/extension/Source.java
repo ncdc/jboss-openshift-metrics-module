@@ -5,12 +5,12 @@ import java.util.Map;
 
 public class Source {
     private String path;
-    private boolean mBean;
+    private String type;
     private Map<String, String> metrics = new HashMap<String, String>();
 
-    public Source(String path, boolean mBean) {
+    public Source(String path, String type) {
         this.path = path;
-        this.mBean = mBean;
+        this.type = type;
     }
 
     public void addMetric(String key, String publishName) {
@@ -67,24 +67,16 @@ public class Source {
     }
 
     /**
-     * @return the mBean
-     */
-    public boolean ismBean() {
-        return mBean;
-    }
-
-    /**
-     * @param mBean
-     *            the mBean to set
-     */
-    public void setmBean(boolean mBean) {
-        this.mBean = mBean;
-    }
-
-    /**
      * @return the metrics
      */
     public Map<String, String> getMetrics() {
         return metrics;
+    }
+
+    /**
+     * @return the type
+     */
+    public String getType() {
+        return type;
     }
 }

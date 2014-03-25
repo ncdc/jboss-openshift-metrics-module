@@ -6,7 +6,6 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 public class SourceDefinition extends SimpleResourceDefinition {
@@ -14,22 +13,21 @@ public class SourceDefinition extends SimpleResourceDefinition {
 
     public static final SourceDefinition INSTANCE = new SourceDefinition();
 
-    protected static final SimpleAttributeDefinition MBEAN =
-            new SimpleAttributeDefinitionBuilder(Constants.MBEAN, ModelType.BOOLEAN)
+    protected static final SimpleAttributeDefinition TYPE =
+            new SimpleAttributeDefinitionBuilder(Constants.TYPE, ModelType.STRING)
                 .setAllowExpression(false)
-                .setXmlName(Constants.MBEAN)
+                .setXmlName(Constants.TYPE)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
                 .setAllowNull(false)
-                .setDefaultValue(new ModelNode().set(false))
                 .build();
 
     private SourceDefinition() {
-        super(SOURCE_PATH, OpenShiftSubsystemExtension.getResourceDescriptionResolver(Constants.SCHEDULE, Constants.SOURCE), SourceAddHandler.INSTANCE, SourceRemoveHandler.INSTANCE);
+        super(SOURCE_PATH, OpenShiftSubsystemExtension.getResourceDescriptionResolver(Constants.METRICS_GROUP, Constants.SOURCE), SourceAddHandler.INSTANCE, SourceRemoveHandler.INSTANCE);
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerReadOnlyAttribute(MBEAN, null);
+        resourceRegistration.registerReadOnlyAttribute(TYPE, null);
     }
 
     @Override

@@ -206,10 +206,13 @@ public class MetricsService implements Service<MetricsService> {
         TriggerKey triggerKey = TriggerKey.triggerKey(schedule);
 
         if(!scheduler.checkExists(triggerKey)) {
+            final String cronExpression = schedule.replaceAll("_", " ")
+                                                  .replaceAll("\\^", "*");
+
             Trigger trigger = TriggerBuilder.newTrigger()
                     .withIdentity(triggerKey)
                     .forJob(job)
-                    .withSchedule(CronScheduleBuilder.cronSchedule(schedule.replaceAll("_", " ")))
+                    .withSchedule(CronScheduleBuilder.cronSchedule(cronExpression))
                     .build();
 
             scheduler.scheduleJob(trigger);

@@ -13,20 +13,20 @@ public class MetricDefinition extends SimpleResourceDefinition {
 
     public static final MetricDefinition INSTANCE = new MetricDefinition();
 
-    protected static final SimpleAttributeDefinition KEY =
-            new SimpleAttributeDefinitionBuilder("key", ModelType.STRING)
+    protected static final SimpleAttributeDefinition SOURCE_KEY =
+            new SimpleAttributeDefinitionBuilder("source-key", ModelType.STRING)
                 .setAllowExpression(false)
-                .setXmlName("key")
+                .setXmlName("source-key")
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
                 .setAllowNull(false)
                 .build();
 
     private MetricDefinition() {
-        super(METRIC_PATH, OpenShiftSubsystemExtension.getResourceDescriptionResolver(Constants.SCHEDULE, Constants.SOURCE, Constants.METRIC), MetricAddHandler.INSTANCE, MetricRemoveHandler.INSTANCE);
+        super(METRIC_PATH, OpenShiftSubsystemExtension.getResourceDescriptionResolver(Constants.METRICS_GROUP, Constants.SOURCE, Constants.METRIC), MetricAddHandler.INSTANCE, MetricRemoveHandler.INSTANCE);
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerReadOnlyAttribute(KEY, null);
+        resourceRegistration.registerReadOnlyAttribute(SOURCE_KEY, null);
     }
 }

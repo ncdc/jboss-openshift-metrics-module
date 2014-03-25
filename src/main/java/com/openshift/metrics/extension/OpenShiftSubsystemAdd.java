@@ -1,8 +1,15 @@
 package com.openshift.metrics.extension;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+
+import java.util.Locale;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.descriptions.DefaultOperationDescriptionProvider;
+import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.server.Services;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder.DependencyType;
@@ -12,7 +19,7 @@ import org.jboss.msc.service.ServiceController.Mode;
 /**
  * Handler responsible for adding the subsystem resource to the model
  */
-class OpenShiftSubsystemAdd extends AbstractAddStepHandler{
+class OpenShiftSubsystemAdd extends AbstractAddStepHandler implements DescriptionProvider {
 
     static final OpenShiftSubsystemAdd INSTANCE = new OpenShiftSubsystemAdd();
 
@@ -22,7 +29,7 @@ class OpenShiftSubsystemAdd extends AbstractAddStepHandler{
     /** {@inheritDoc} */
     @Override
     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        model.get(Constants.SCHEDULE).setEmptyList();
+        model.setEmptyObject();//get(Constants.METRICS_GROUP).setEmptyList();
     }
 
     /** {@inheritDoc} */
@@ -41,5 +48,11 @@ class OpenShiftSubsystemAdd extends AbstractAddStepHandler{
                 .install();
 
         newControllers.add(controller);
+    }
+
+    @Override
+    public ModelNode getModelDescription(Locale locale) {
+        final DefaultOperationDescriptionProvider delegate = new DefaultOperationDescriptionProvider(ADD, OpenShiftSubsystemExtension.getResourceDescriptionResolver(), (AttributeDefinition[])null);
+        return delegate.getModelDescription(locale);
     }
 }

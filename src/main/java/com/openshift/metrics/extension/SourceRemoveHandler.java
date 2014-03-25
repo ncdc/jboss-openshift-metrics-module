@@ -1,11 +1,15 @@
 package com.openshift.metrics.extension;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
+
 import java.util.Locale;
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.descriptions.DefaultOperationDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
@@ -19,8 +23,8 @@ public class SourceRemoveHandler extends AbstractRemoveStepHandler implements De
 
     @Override
     public ModelNode getModelDescription(Locale locale) {
-        // TODO Auto-generated method stub
-        return null;
+        final DefaultOperationDescriptionProvider delegate = new DefaultOperationDescriptionProvider(REMOVE, OpenShiftSubsystemExtension.getResourceDescriptionResolver(Constants.METRICS_GROUP, Constants.SOURCE), (AttributeDefinition[])null);
+        return delegate.getModelDescription(locale);
     }
 
     @Override

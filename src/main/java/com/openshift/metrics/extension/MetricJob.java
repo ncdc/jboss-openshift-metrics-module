@@ -80,7 +80,7 @@ public class MetricJob implements Job {
         // loop through each source, processing all of each source's metrics
         for (String sourcePath : sources.keySet()) {
             Source source = sources.get(sourcePath);
-            if(source.ismBean()) {
+            if(Constants.MBEAN.equals(source.getType())) {
                 doMBeanSource(source);
             } else {
                 doNativeSource(source, context);

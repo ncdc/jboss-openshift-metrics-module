@@ -1,29 +1,32 @@
 package com.openshift.metrics.extension;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 
 import java.util.Locale;
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.descriptions.DefaultOperationDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.dmr.ModelNode;
 import org.quartz.SchedulerException;
 
 public class ScheduleRemoveHandler extends AbstractRemoveStepHandler implements DescriptionProvider {
     public static final ScheduleRemoveHandler INSTANCE = new ScheduleRemoveHandler();
-    
+
     public ScheduleRemoveHandler() {
     }
 
     @Override
     public ModelNode getModelDescription(Locale locale) {
-        // TODO Auto-generated method stub
-        return null;
+        final DefaultOperationDescriptionProvider delegate = new DefaultOperationDescriptionProvider(REMOVE, OpenShiftSubsystemExtension.getResourceDescriptionResolver(Constants.METRICS_GROUP), (AttributeDefinition[])null);
+        return delegate.getModelDescription(locale);
     }
-    
+
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         MetricsService service = (MetricsService) context.getServiceRegistry(true).getRequiredService(MetricsService.getServiceName()).getValue();
