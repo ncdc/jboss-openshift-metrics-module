@@ -13,10 +13,12 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.DefaultOperationDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.dmr.ModelNode;
-import org.quartz.SchedulerException;
+import org.jboss.logging.Logger;
 
 public class MetricsGroupRemoveHandler extends AbstractRemoveStepHandler implements DescriptionProvider {
     public static final MetricsGroupRemoveHandler INSTANCE = new MetricsGroupRemoveHandler();
+
+    private final Logger log = Logger.getLogger(MetricsGroupRemoveHandler.class);
 
     public MetricsGroupRemoveHandler() {
     }
@@ -32,11 +34,11 @@ public class MetricsGroupRemoveHandler extends AbstractRemoveStepHandler impleme
         MetricsService service = (MetricsService) context.getServiceRegistry(true).getRequiredService(MetricsService.getServiceName()).getValue();
         ModelNode address = operation.require(OP_ADDR);
         String schedule = PathAddress.pathAddress(address).getLastElement().getValue();
+        final String cronExpression = Util.decodeCronExpression(schedule);
         try {
-            service.removeJob(schedule);
-        } catch (SchedulerException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            service.removeJob(cronExpression);
+        } catch (Exception e) {
+            log.errorv(e, "Encountered exception trying to remove metrics group[schedule={0}]", cronExpression);
         }
     }
 }

@@ -1,32 +1,33 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-            targetNamespace="urn:redhat:openshift:metrics:1.0"
-            xmlns="urn:redhat:openshift:metrics:1.0"
-            elementFormDefault="qualified"
-            attributeFormDefault="unqualified"
-            version="1.0">
+  targetNamespace="urn:redhat:openshift:metrics:1.0" xmlns="urn:redhat:openshift:metrics:1.0"
+  elementFormDefault="qualified" attributeFormDefault="unqualified"
+  version="1.0">
 
-    <!-- The subsystem root element -->
-    <xs:element name="subsystem" type="subsystemType"/>
-    <xs:complexType name="subsystemType">
-    	<xs:choice minOccurs="0" maxOccurs="unbounded">
-    		<xs:element name="metrics-group" type="metricsGroupType" />
-    	</xs:choice>
-    </xs:complexType>
-    <xs:complexType name="metricsGroupType">
-    	<xs:choice minOccurs="1" maxOccurs="unbounded">
-    		<xs:element name="source" type="sourceType" />
-    	</xs:choice>
-    	<xs:attribute name="cron"use="required"/>
-    </xs:complexType>
-    <xs:complexType name="sourceType">
-    	<xs:choice minOccurs="1" maxOccurs="unbounded">
-    		<xs:element name="metric" type="metricType" />
-    	</xs:choice>
-  		<xs:attribute name="node" use="required" />
-    	<xs:attribute name="type" use="required" />
-    </xs:complexType>
-    <xs:complexType name="metricType">
-    	<xs:attribute name="source-key" use="required" />
- 		<xs:attribute name="publish-key" use="required" />
-    </xs:complexType>
+  <!-- The subsystem root element -->
+  <xs:element name="subsystem" type="subsystemType" />
+  <xs:complexType name="subsystemType">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="metrics-group" type="metricsGroupType" />
+    </xs:choice>
+  </xs:complexType>
+  <xs:complexType name="metricsGroupType">
+    <xs:choice minOccurs="1" maxOccurs="unbounded">
+      <xs:element name="source" type="sourceType" />
+    </xs:choice>
+    <xs:attribute name="cron" use="required" />
+    <xs:attribute name="enabled" type="xs:boolean" />
+  </xs:complexType>
+  <xs:complexType name="sourceType">
+    <xs:choice minOccurs="1" maxOccurs="unbounded">
+      <xs:element name="metric" type="metricType" />
+    </xs:choice>
+    <xs:attribute name="node" use="required" />
+    <xs:attribute name="type" use="required" />
+    <xs:attribute name="enabled" type="xs:boolean" />
+  </xs:complexType>
+  <xs:complexType name="metricType">
+    <xs:attribute name="source-key" use="required" />
+    <xs:attribute name="publish-key" use="required" />
+    <xs:attribute name="enabled" type="xs:boolean" />
+  </xs:complexType>
 </xs:schema>

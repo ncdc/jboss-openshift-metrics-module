@@ -13,6 +13,7 @@ public class Constants {
     public static final String PUBLISH_KEY = "publish-key";
     public static final String CRON = "cron";
     public static final String MBEAN = "mbean";
+    public static final String ENABLED = "enabled";
 
     private Constants() {}
 }

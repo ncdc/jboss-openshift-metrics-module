@@ -14,39 +14,43 @@ import org.jboss.as.controller.descriptions.DefaultOperationDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
+import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceController;
-import org.quartz.SchedulerException;
 
 public class SourceAddHandler extends AbstractAddStepHandler implements DescriptionProvider {
     public static final SourceAddHandler INSTANCE = new SourceAddHandler();
+
+    private final Logger log = Logger.getLogger(SourceAddHandler.class);
 
     public SourceAddHandler() {
     }
 
     @Override
     public ModelNode getModelDescription(Locale locale) {
-        final DefaultOperationDescriptionProvider delegate = new DefaultOperationDescriptionProvider(ADD, OpenShiftSubsystemExtension.getResourceDescriptionResolver(Constants.METRICS_GROUP, Constants.SOURCE), SourceDefinition.TYPE);
+        final DefaultOperationDescriptionProvider delegate = new DefaultOperationDescriptionProvider(ADD, OpenShiftSubsystemExtension.getResourceDescriptionResolver(Constants.METRICS_GROUP, Constants.SOURCE), SourceDefinition.TYPE, MetricsGroupDefinition.ENABLED);
         return delegate.getModelDescription(locale);
     }
 
     @Override
     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-//        model.get(Constants.METRIC).setEmptyList();
-        model.get(Constants.TYPE).set(operation.get(Constants.TYPE));
+        SourceDefinition.TYPE.validateAndSet(operation, model);;
+        MetricsGroupDefinition.ENABLED.validateAndSet(operation, model);
     }
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
         MetricsService service = (MetricsService) context.getServiceRegistry(true).getRequiredService(MetricsService.getServiceName()).getValue();
-        final String schedule = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getElement(1).getValue();
-        final String sourceString = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getElement(2).getValue();
+        final ModelNode address = operation.get(ModelDescriptionConstants.ADDRESS);
+        final String schedule = PathAddress.pathAddress(address).getElement(1).getValue();
+        final String sourcePath = PathAddress.pathAddress(address).getElement(2).getValue();
         String type = SourceDefinition.TYPE.resolveModelAttribute(context,operation).asString();
-        final Source source = new Source(sourceString, type);
+        final boolean enabled = MetricsGroupDefinition.ENABLED.resolveModelAttribute(context, operation).asBoolean();
+        final Source source = new Source(sourcePath, type, enabled);
+        final String cronExpression = Util.decodeCronExpression(schedule);
         try {
-            service.addMetricSource(schedule, source);
-        } catch (SchedulerException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            service.addMetricSource(cronExpression, source);
+        } catch (Exception e) {
+            log.errorv(e, "Encountered exception trying to add source[schedule={0}, path={1}]", cronExpression, source);
         }
     }
 }

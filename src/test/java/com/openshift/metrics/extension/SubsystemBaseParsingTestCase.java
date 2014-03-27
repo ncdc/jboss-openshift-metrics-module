@@ -18,7 +18,7 @@ public class SubsystemBaseParsingTestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return "<subsystem xmlns=\"" + OpenShiftSubsystemExtension.NAMESPACE + "\">"        +
+        return "<subsystem xmlns=\"" + OpenShiftSubsystemExtension.NAMESPACE + "\">"         +
                 "   <metrics-group cron=\"*/5 * * * * ?\">"                                  +
                 "       <source type=\"jboss\" path=\"g1.s1\">"                              +
                 "           <metric source-key=\"g1.s1.sk1\" publish-key=\"g1.s1.pk1\" />"   +
@@ -28,9 +28,9 @@ public class SubsystemBaseParsingTestCase extends AbstractSubsystemBaseTest {
                 "           <metric source-key=\"g1.s2.sk1\" publish-key=\"g1.s2.pk1\" />"   +
                 "       </source>"                                                           +
                 "   </metrics-group>"                                                        +
-                "   <metrics-group cron=\"* * * * * ?\">"                                      +
-                "       <source type=\"jboss\" path=\"g2.s1\">"                              +
-                "           <metric source-key=\"g2.s1.sk1\" publish-key=\"g2.s1.pk1\" />"   +
+                "   <metrics-group cron=\"* * * * * ?\" enabled=\"false\">"                  +
+                "       <source type=\"jboss\" path=\"g2.s1\" enabled=\"false\">"            +
+                "           <metric source-key=\"g2.s1.sk1\" publish-key=\"g2.s1.pk1\" enabled=\"false\" />"   +
                 "       </source>"                                                           +
                 "   </metrics-group>"                                                        +
                 "</subsystem>";

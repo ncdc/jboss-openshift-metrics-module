@@ -16,7 +16,14 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.MethodRule;
+import org.junit.rules.TestWatchman;
+import org.junit.runners.model.FrameworkMethod;
+import org.quartz.SchedulerException;
+import org.quartz.impl.StdSchedulerFactory;
 
 
 public class SubsystemParsingTestCase extends AbstractSubsystemTest {
@@ -40,6 +47,20 @@ public class SubsystemParsingTestCase extends AbstractSubsystemTest {
 
     public SubsystemParsingTestCase() {
         super(OpenShiftSubsystemExtension.SUBSYSTEM_NAME, new OpenShiftSubsystemExtension());
+    }
+
+    @Rule
+    public MethodRule watchman = new TestWatchman() {
+       @Override
+       public void starting(FrameworkMethod method) {
+          System.out.println("Starting test: " + method.getName());
+       }
+    };
+
+
+    @Before
+    public void before() throws SchedulerException {
+        StdSchedulerFactory.getDefaultScheduler().clear();
     }
 
     /**
@@ -174,6 +195,8 @@ public class SubsystemParsingTestCase extends AbstractSubsystemTest {
         ModelNode modelA = servicesA.readWholeModel();
         String marshalled = servicesA.getPersistedSubsystemXml();
 
+        servicesA.shutdown();
+
         //Install the persisted xml from the first controller into a second controller
         KernelServices servicesB = super.installInController(marshalled);
         ModelNode modelB = servicesB.readWholeModel();
@@ -198,6 +221,8 @@ public class SubsystemParsingTestCase extends AbstractSubsystemTest {
                 PathAddress.pathAddress(
                         PathElement.pathElement(SUBSYSTEM, OpenShiftSubsystemExtension.SUBSYSTEM_NAME)).toModelNode());
         List<ModelNode> operations = super.checkResultAndGetContents(servicesA.executeOperation(describeOp)).asList();
+
+        servicesA.shutdown();
 
         //Install the describe options from the first controller into a second controller
         KernelServices servicesB = super.installInController(operations);

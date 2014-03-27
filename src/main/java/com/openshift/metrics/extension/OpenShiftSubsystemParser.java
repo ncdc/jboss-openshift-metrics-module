@@ -15,7 +15,6 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
@@ -33,21 +32,26 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
     public void writeContent(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
         context.startSubsystemElement(OpenShiftSubsystemExtension.NAMESPACE, false);
         ModelNode node = context.getModelNode();
-        ModelNode schedules = node.get(Constants.METRICS_GROUP);
-        writeSchedules(writer, schedules);
+        ModelNode metricsGroups = node.get(Constants.METRICS_GROUP);
+        writeMetricsGroups(writer, metricsGroups);
         writer.writeEndElement();
     }
 
-    private void writeSchedules(XMLExtendedStreamWriter writer, ModelNode schedules) throws XMLStreamException {
-        for(ModelNode schedule : schedules.asList()){
+    private void writeMetricsGroups(XMLExtendedStreamWriter writer, ModelNode metricsGroups) throws XMLStreamException {
+        for(String key : metricsGroups.keys()){
             writer.writeStartElement(Constants.METRICS_GROUP);
-            final Property scheduleProperty = schedule.asProperty();
-            final String cronExpression = scheduleProperty.getName()
-                                                          .replaceAll("_", " ")
-                                                          .replaceAll("\\^",  "*");
+
+            ModelNode metricsGroup = metricsGroups.get(key);
+
+            String cronExpression = com.openshift.metrics.extension.Util.decodeCronExpression(key);
+
             writer.writeAttribute(Constants.CRON, cronExpression);
 
-            ModelNode sources = scheduleProperty.getValue().get(Constants.SOURCE);
+            if(metricsGroup.hasDefined(Constants.ENABLED) && !metricsGroup.get(Constants.ENABLED).asBoolean()) {
+                writer.writeAttribute(Constants.ENABLED, "false");
+            }
+
+            ModelNode sources = metricsGroup.get(Constants.SOURCE);
             writeSources(writer, sources);
 
             writer.writeEndElement();
@@ -61,6 +65,10 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
             writer.writeStartElement(Constants.SOURCE);
             writer.writeAttribute(Constants.PATH, sourcePath);
             writer.writeAttribute(Constants.TYPE, source.get(Constants.TYPE).asString());
+
+            if(source.hasDefined(Constants.ENABLED) && !source.get(Constants.ENABLED).asBoolean()) {
+                writer.writeAttribute(Constants.ENABLED, "false");
+            }
 
             ModelNode metrics = source.get(Constants.METRIC);
             writeMetrics(writer, metrics);
@@ -76,6 +84,11 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
             writer.writeStartElement(Constants.METRIC);
             writer.writeAttribute(Constants.SOURCE_KEY, key);
             writer.writeAttribute(Constants.PUBLISH_KEY, publishName);
+
+            if(metric.hasDefined(Constants.ENABLED) && !metric.get(Constants.ENABLED).asBoolean()) {
+                writer.writeAttribute(Constants.ENABLED, "false");
+            }
+
             writer.writeEndElement();
         }
     }
@@ -101,23 +114,24 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
     }
 
     private void readMetricsGroups(XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
+        final ModelNode addScheduleOperation = Util.getEmptyOperation(ADD, null);
         String schedule = null;
+
         for (int i = 0; i < reader.getAttributeCount(); i++) {
             String attr = reader.getAttributeLocalName(i);
             String value = reader.getAttributeValue(i);
-            if(Constants.CRON.equals(attr)) {
-                // need to convert spaces to underscores
-                schedule = value.replaceAll(" ", "_");
 
-                // need to convert all *s to ^
-                schedule = schedule.replaceAll("\\*", "^");
+            if(Constants.CRON.equals(attr)) {
+                schedule = com.openshift.metrics.extension.Util.encodeCronExpression(value);
+            } else if(Constants.ENABLED.equals(attr)) {
+                MetricsGroupDefinition.ENABLED.parseAndSetParameter(value, addScheduleOperation, reader);
             } else {
                 throw ParseUtils.unexpectedAttribute(reader, i);
             }
         }
 
         final PathAddress address = parentAddress.append(PathElement.pathElement(Constants.METRICS_GROUP, schedule));
-        final ModelNode addScheduleOperation = Util.getEmptyOperation(ADD, address.toModelNode());
+        addScheduleOperation.get(OP_ADDR).set(address.toModelNode());
         list.add(addScheduleOperation);
 
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
@@ -139,6 +153,8 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
                 path = value;
             } else if(Constants.TYPE.equals(attr)) {
                 SourceDefinition.TYPE.parseAndSetParameter(value, addSourceOperation, reader);
+            } else if(Constants.ENABLED.equals(attr)) {
+                MetricsGroupDefinition.ENABLED.parseAndSetParameter(value, addSourceOperation, reader);
             } else {
                 throw ParseUtils.unexpectedAttribute(reader, i);
             }
@@ -168,6 +184,8 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
                 MetricDefinition.SOURCE_KEY.parseAndSetParameter(value, addMetricOperation, reader);
             } else if (Constants.PUBLISH_KEY.equals(attr)) {
                 publishName = value;
+            } else if(Constants.ENABLED.equals(attr)) {
+                MetricsGroupDefinition.ENABLED.parseAndSetParameter(value, addMetricOperation, reader);
             } else {
                 throw ParseUtils.unexpectedAttribute(reader, i);
             }

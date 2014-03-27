@@ -6,19 +6,29 @@ import java.util.Map;
 public class Source {
     private String path;
     private String type;
-    private Map<String, String> metrics = new HashMap<String, String>();
+    private Map<String, Metric> metrics = new HashMap<String, Metric>();
+    private boolean enabled;
 
-    public Source(String path, String type) {
+    public Source(String path, String type, boolean enabled) {
         this.path = path;
         this.type = type;
+        this.enabled = enabled;
     }
 
-    public void addMetric(String key, String publishName) {
-        metrics.put(key, publishName);
+    public void addMetric(String sourceKey, String publishKey, boolean enabled) {
+        metrics.put(publishKey, new Metric(sourceKey, publishKey, enabled));
+
     }
 
-    public void removeMetric(String key) {
-        metrics.remove(key);
+    public void enableMetric(String publishKey, boolean enabled) {
+        final Metric metric = metrics.get(publishKey);
+        if(metric != null) {
+            metric.setEnabled(enabled);
+        }
+    }
+
+    public void removeMetric(String publishKey) {
+        metrics.remove(publishKey);
     }
 
     @Override
@@ -69,7 +79,7 @@ public class Source {
     /**
      * @return the metrics
      */
-    public Map<String, String> getMetrics() {
+    public Map<String, Metric> getMetrics() {
         return metrics;
     }
 
@@ -78,5 +88,19 @@ public class Source {
      */
     public String getType() {
         return type;
+    }
+
+    /**
+     * @return the enabled
+     */
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    /**
+     * @param enabled the enabled to set
+     */
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }

@@ -80,6 +80,11 @@ public class MetricJob implements Job {
         // loop through each source, processing all of each source's metrics
         for (String sourcePath : sources.keySet()) {
             Source source = sources.get(sourcePath);
+
+            if(!source.isEnabled()) {
+                continue;
+            }
+
             if(Constants.MBEAN.equals(source.getType())) {
                 doMBeanSource(source);
             } else {
@@ -110,11 +115,18 @@ public class MetricJob implements Job {
         // Get the mBeanServer to access source
         MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
-        Map<String,String> metrics = source.getMetrics();
+        Map<String, Metric> metrics = source.getMetrics();
 
         // Iterate over all metrics in source
-        for(String originalKey : metrics.keySet()) {
-            String keyAndSubkey[] = extractKeyAndSubkey(originalKey);
+        for(String publishKey : metrics.keySet()) {
+            final Metric metric = metrics.get(publishKey);
+
+            if(!metric.isEnabled()) {
+                continue;
+            }
+
+            String sourceKey = metric.getSourceKey();
+            String keyAndSubkey[] = extractKeyAndSubkey(sourceKey);
             String key = keyAndSubkey[0];
             String subkey = keyAndSubkey[1];
 
@@ -131,7 +143,7 @@ public class MetricJob implements Job {
                     }
                 }
                 String metricValue  = result.toString();
-                publishMetric(metrics.get(originalKey),metricValue);
+                publishMetric(publishKey, metricValue);
             } catch (AttributeNotFoundException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -167,11 +179,18 @@ public class MetricJob implements Job {
         // set the address appropriately
         setAddressFromSource(op, source.getPath());
 
-        Map<String,String> metrics = source.getMetrics();
+        Map<String, Metric> metrics = source.getMetrics();
 
         // loop through them
-        for(String originalKey : metrics.keySet()) {
-            String keyAndSubkey[] = extractKeyAndSubkey(originalKey);
+        for(String publishKey : metrics.keySet()) {
+            final Metric metric = metrics.get(publishKey);
+
+            if(!metric.isEnabled()) {
+                continue;
+            }
+
+            String sourceKey = metric.getSourceKey();
+            String keyAndSubkey[] = extractKeyAndSubkey(sourceKey);
             String key = keyAndSubkey[0];
             String subkey = keyAndSubkey[1];
 
@@ -191,9 +210,8 @@ public class MetricJob implements Job {
                     result = result.get(subkey);
                 }
 
-                String publishName = metrics.get(originalKey);
                 String metricValue = result.asString();
-                publishMetric(publishName, metricValue);
+                publishMetric(publishKey, metricValue);
             } catch (IOException e) {
                 log.error("Error executing operation " + op, e);
                 // TODO anything else to do here?

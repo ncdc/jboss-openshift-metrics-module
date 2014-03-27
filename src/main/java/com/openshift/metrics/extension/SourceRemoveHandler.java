@@ -13,10 +13,12 @@ import org.jboss.as.controller.descriptions.DefaultOperationDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
-import org.quartz.SchedulerException;
+import org.jboss.logging.Logger;
 
 public class SourceRemoveHandler extends AbstractRemoveStepHandler implements DescriptionProvider {
     public static final SourceRemoveHandler INSTANCE = new SourceRemoveHandler();
+
+    private final Logger log = Logger.getLogger(SourceRemoveHandler.class);
 
     public SourceRemoveHandler() {
     }
@@ -30,13 +32,14 @@ public class SourceRemoveHandler extends AbstractRemoveStepHandler implements De
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         MetricsService service = (MetricsService) context.getServiceRegistry(true).getRequiredService(MetricsService.getServiceName()).getValue();
-        final String schedule = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getElement(1).getValue();
-        final String source = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getElement(2).getValue();
+        final ModelNode address = operation.get(ModelDescriptionConstants.ADDRESS);
+        final String schedule = PathAddress.pathAddress(address).getElement(1).getValue();
+        final String source = PathAddress.pathAddress(address).getElement(2).getValue();
+        final String cronExpression = Util.decodeCronExpression(schedule);
         try {
-            service.removeMetricSource(schedule, source);
-        } catch (SchedulerException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            service.removeMetricSource(cronExpression, source);
+        } catch (Exception e) {
+            log.errorv(e, "Encountered exception trying to add source[schedule={0}, path={1}]", cronExpression, source);
         }
     }
 }
