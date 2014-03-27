@@ -8,6 +8,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.text.MessageFormat;
 import java.util.Map;
 import java.util.StringTokenizer;
 
@@ -32,6 +33,8 @@ import org.quartz.SchedulerException;
 
 public class MetricJob implements Job {
     private final Logger log = Logger.getLogger(MetricJob.class);
+
+    private static final String PUBLISH_FORMAT="type=metric cart=jboss {0}={1}";
 
     private ModelControllerClient getModelControllerClient(JobExecutionContext context) {
         ModelControllerClient client = null;
@@ -219,9 +222,9 @@ public class MetricJob implements Job {
         }
     }
 
-    private void publishMetric(String publishName, String metricValue) {
+    private void publishMetric(String publishKey, String metricValue) {
         //TODO switch to syslog?
-        log.info(publishName + "=" + metricValue);
+        log.info(MessageFormat.format(PUBLISH_FORMAT, publishKey, metricValue));
     }
 
 }
