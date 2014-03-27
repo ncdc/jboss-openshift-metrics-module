@@ -33,11 +33,22 @@ In standalone.xml, add the following inside the `<extensions>` section:
 Next, configure the metrics subsystem inside the `<profile>` section. Here is an example:
 
     <subsystem xmlns="urn:redhat:openshift:metrics:1.0">
-      <metric-schedule cron="*/5 * * * * ?">
-        <source node="core-service=platform-mbean/type=memory-pool/name=CMS_Old_Gen">
-          <metric key="usage.used" publish-name="oldgen.used" />
-          <metric key="usage.max" publish-name="oldgen.max" />
-          <metric key="usage.committed" publish-name="oldgen.committed" />
+      <metrics-group cron="*/5 * * * * ?">
+
+        <source type="jboss" path="core-service=platform-mbean/type=memory-pool/name=CMS_Old_Gen">
+          <metric source-key="usage.used" publish-key="oldgen.used" />
+
+          <metric source-key="usage.max" publish-key="oldgen.max" />
+
+          <metric source-key="usage.committed" publish-key="oldgen.committed" />
         </source>
+
+        <source path="java.lang:type=Memory" type="mbean">
+		  <metric source-key="HeapMemoryUsage.used" publish-key="jmx.heap.used"/>
+		</source>
+
       </metric-schedule>
     </subsystem>
+
+You may also optionally add `enabled="false"` to a `<metrics-group>`, `<source>`, or `<metric>` to disable that element from being gathered and published.
+
