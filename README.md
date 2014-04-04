@@ -44,10 +44,10 @@ Next, configure the metrics subsystem inside the `<profile>` section. Here is an
         </source>
 
         <source path="java.lang:type=Memory" type="mbean">
-		  <metric source-key="HeapMemoryUsage.used" publish-key="jmx.heap.used"/>
-		</source>
+          <metric source-key="HeapMemoryUsage.used" publish-key="jmx.heap.used"/>
+        </source>
 
-      </metric-schedule>
+      </metrics-group>
     </subsystem>
 
 You may also optionally add `enabled="false"` to a `<metrics-group>`, `<source>`, or `<metric>` to disable that element from being gathered and published.
