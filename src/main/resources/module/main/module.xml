@@ -1,6 +1,7 @@
 <module xmlns="urn:jboss:module:1.0" name="com.openshift.metrics">
     <resources>
         <resource-root path="openshift-metrics.jar"/>
+        <resource-root path="quartz.jar"/>
     </resources>
     
     <dependencies>
@@ -12,6 +13,6 @@
         <module name="org.jboss.msc"/>
         <module name="org.jboss.logging"/>
         <module name="org.jboss.vfs"/>
-        <module name="org.quartz" />
+        <module name="org.slf4j" />
     </dependencies>
 </module>
