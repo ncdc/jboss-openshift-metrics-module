@@ -2,6 +2,7 @@ package com.openshift.metrics.extension;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 
+import java.text.MessageFormat;
 import java.util.Locale;
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
@@ -13,12 +14,9 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
 
 public class MetricRemoveHandler extends AbstractRemoveStepHandler implements DescriptionProvider {
     public static final MetricRemoveHandler INSTANCE = new MetricRemoveHandler();
-
-    private final Logger log = Logger.getLogger(MetricRemoveHandler.class);
 
     public MetricRemoveHandler() {
     }
@@ -42,7 +40,8 @@ public class MetricRemoveHandler extends AbstractRemoveStepHandler implements De
         try {
             service.removeMetric(cronExpression, source, publishKey);
         } catch (Exception e) {
-            log.errorv(e, "Encountered exception trying to remove metric[schedule={0}, source={1}, publishKey={2}]", cronExpression, source, publishKey);
+            String message = MessageFormat.format("Encountered exception trying to remove metric[schedule={0}, source={1}, publishKey={2}]", cronExpression, source, publishKey);
+            throw new OperationFailedException(message, e);
         }
     }
 }

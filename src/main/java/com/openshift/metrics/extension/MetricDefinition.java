@@ -2,6 +2,8 @@ package com.openshift.metrics.extension;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
+import java.text.MessageFormat;
+
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -70,7 +72,7 @@ public class MetricDefinition extends SimpleResourceDefinition {
             modify(context, operation, valueToRestore.asBoolean());
         }
 
-        private void modify(OperationContext context, ModelNode operation, boolean enabled) {
+        private void modify(OperationContext context, ModelNode operation, boolean enabled) throws OperationFailedException {
             MetricsService service = (MetricsService) context.getServiceRegistry(true).getRequiredService(MetricsService.getServiceName()).getValue();
             ModelNode address = operation.require(OP_ADDR);
             final String schedule = PathAddress.pathAddress(address).getElement(1).getValue();
@@ -80,8 +82,8 @@ public class MetricDefinition extends SimpleResourceDefinition {
             try {
                 service.enableMetric(cronExpression, sourcePath, publishKey, enabled);
             } catch (SchedulerException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                String message = MessageFormat.format("Encountered exception trying to enable/disable metric[schedule={0}, source={1}, publishKey={2}, enabled={3}]", cronExpression, sourcePath, publishKey, enabled);
+                throw new OperationFailedException(message, e);
             }
         }
     }

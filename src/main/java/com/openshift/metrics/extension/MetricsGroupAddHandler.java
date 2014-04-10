@@ -3,6 +3,7 @@ package com.openshift.metrics.extension;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.Locale;
 
@@ -14,13 +15,10 @@ import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.descriptions.DefaultOperationDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceController;
 
 public class MetricsGroupAddHandler extends AbstractAddStepHandler implements DescriptionProvider {
     public static final MetricsGroupAddHandler INSTANCE = new MetricsGroupAddHandler();
-
-    private final Logger log = Logger.getLogger(MetricsGroupAddHandler.class);
 
     public MetricsGroupAddHandler() {
     }
@@ -46,7 +44,8 @@ public class MetricsGroupAddHandler extends AbstractAddStepHandler implements De
         try {
             service.createJob(cronExpression, enabled);
         } catch (Exception e) {
-            log.errorv(e, "Encountered exception trying to add metrics group[schedule={0}]", cronExpression);
+            String message = MessageFormat.format("Encountered exception trying to add metrics group[schedule={0}]", cronExpression);
+            throw new OperationFailedException(message, e);
         }
     }
 }

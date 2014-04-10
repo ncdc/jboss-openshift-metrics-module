@@ -31,7 +31,13 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
     @Override
     public void writeContent(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
         context.startSubsystemElement(OpenShiftSubsystemExtension.NAMESPACE, false);
+
         ModelNode node = context.getModelNode();
+
+        if(node.hasDefined(Constants.MAX_LINE_LENGTH)) {
+            OpenShiftSubsystemDefinition.MAX_LINE_LENGTH.marshallAsElement(node, writer);
+        }
+
         ModelNode metricsGroups = node.get(Constants.METRICS_GROUP);
         writeMetricsGroups(writer, metricsGroups);
         writer.writeEndElement();
@@ -105,11 +111,14 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
         list.add(subsystem);
 
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            if(!reader.getLocalName().equals(Constants.METRICS_GROUP)) {
+            if(reader.getLocalName().equals(Constants.MAX_LINE_LENGTH)) {
+                final String value = parseElementNoAttributes(reader);
+                OpenShiftSubsystemDefinition.MAX_LINE_LENGTH.parseAndSetParameter(value, subsystem, reader);
+            } else if(reader.getLocalName().equals(Constants.METRICS_GROUP)) {
+                readMetricsGroups(reader, address, list);
+            } else {
                 throw ParseUtils.unexpectedElement(reader);
             }
-
-            readMetricsGroups(reader, address, list);
         }
     }
 
@@ -200,5 +209,12 @@ public class OpenShiftSubsystemParser implements XMLStreamConstants, XMLElementR
         PathAddress address = parentAddress.append(PathElement.pathElement(Constants.METRIC, publishName));
         addMetricOperation.get(OP_ADDR).set(address.toModelNode());
         list.add(addMetricOperation);
+    }
+
+    private String parseElementNoAttributes(final XMLExtendedStreamReader reader) throws XMLStreamException {
+        // no attributes
+        ParseUtils.requireNoAttributes(reader);
+
+        return reader.getElementText().trim();
     }
 }

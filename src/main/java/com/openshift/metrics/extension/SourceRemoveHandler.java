@@ -2,6 +2,7 @@ package com.openshift.metrics.extension;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 
+import java.text.MessageFormat;
 import java.util.Locale;
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
@@ -13,12 +14,9 @@ import org.jboss.as.controller.descriptions.DefaultOperationDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
 
 public class SourceRemoveHandler extends AbstractRemoveStepHandler implements DescriptionProvider {
     public static final SourceRemoveHandler INSTANCE = new SourceRemoveHandler();
-
-    private final Logger log = Logger.getLogger(SourceRemoveHandler.class);
 
     public SourceRemoveHandler() {
     }
@@ -39,7 +37,8 @@ public class SourceRemoveHandler extends AbstractRemoveStepHandler implements De
         try {
             service.removeMetricSource(cronExpression, source);
         } catch (Exception e) {
-            log.errorv(e, "Encountered exception trying to add source[schedule={0}, path={1}]", cronExpression, source);
+            String message = MessageFormat.format("Encountered exception trying to add source[schedule={0}, path={1}]", cronExpression, source);
+            throw new OperationFailedException(message, e);
         }
     }
 }

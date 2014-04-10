@@ -3,6 +3,7 @@ package com.openshift.metrics.extension;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 
+import java.text.MessageFormat;
 import java.util.Locale;
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
@@ -13,12 +14,9 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.DefaultOperationDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
 
 public class MetricsGroupRemoveHandler extends AbstractRemoveStepHandler implements DescriptionProvider {
     public static final MetricsGroupRemoveHandler INSTANCE = new MetricsGroupRemoveHandler();
-
-    private final Logger log = Logger.getLogger(MetricsGroupRemoveHandler.class);
 
     public MetricsGroupRemoveHandler() {
     }
@@ -38,7 +36,8 @@ public class MetricsGroupRemoveHandler extends AbstractRemoveStepHandler impleme
         try {
             service.removeJob(cronExpression);
         } catch (Exception e) {
-            log.errorv(e, "Encountered exception trying to remove metrics group[schedule={0}]", cronExpression);
+            String message = MessageFormat.format("Encountered exception trying to remove metrics group[schedule={0}]", cronExpression);
+            throw new OperationFailedException(message, e);
         }
     }
 }

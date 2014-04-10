@@ -2,6 +2,7 @@ package com.openshift.metrics.extension;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.Locale;
 
@@ -14,13 +15,10 @@ import org.jboss.as.controller.descriptions.DefaultOperationDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceController;
 
 public class SourceAddHandler extends AbstractAddStepHandler implements DescriptionProvider {
     public static final SourceAddHandler INSTANCE = new SourceAddHandler();
-
-    private final Logger log = Logger.getLogger(SourceAddHandler.class);
 
     public SourceAddHandler() {
     }
@@ -50,7 +48,8 @@ public class SourceAddHandler extends AbstractAddStepHandler implements Descript
         try {
             service.addMetricSource(cronExpression, source);
         } catch (Exception e) {
-            log.errorv(e, "Encountered exception trying to add source[schedule={0}, path={1}]", cronExpression, source);
+            String message = MessageFormat.format("Encountered exception trying to add source[schedule={0}, path={1}]", cronExpression, source);
+            throw new OperationFailedException(message, e);
         }
     }
 }

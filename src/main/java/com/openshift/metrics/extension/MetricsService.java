@@ -47,31 +47,26 @@ public class MetricsService implements Service<MetricsService> {
 
     private ExecutorService managementOperationExecutor;
 
-    public MetricsService() {
-        try {
-            // I originally had this in start() but it looks like start() and
-            // the various ADD operations that are invoked after the subsystem
-            // is parsed can run in separate threads, so I had a race condition
-            // where something like createJob() would run before start(), resulting
-            // in an NPE because the scheduler was null. Not sure of the best way
-            // to do this...
-            log.debug("Creating metrics scheduler");
-            scheduler = StdSchedulerFactory.getDefaultScheduler();
+    public MetricsService() throws SchedulerException {
+        // I originally had this in start() but it looks like start() and
+        // the various ADD operations that are invoked after the subsystem
+        // is parsed can run in separate threads, so I had a race condition
+        // where something like createJob() would run before start(), resulting
+        // in an NPE because the scheduler was null. Not sure of the best way
+        // to do this...
+        log.debug("Creating metrics scheduler");
+        scheduler = StdSchedulerFactory.getDefaultScheduler();
 
-            // Is this the most appropriate executor type?
-            managementOperationExecutor = Executors.newSingleThreadExecutor(new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable run) {
-                    Thread thread = new Thread(run);
-                    thread.setName("Metrics Management Client Thread");
-                    thread.setDaemon(true);
-                    return thread;
-                }
-            });
-        } catch (SchedulerException e) {
-            //TODO better error handling
-            e.printStackTrace();
-        }
+        // Is this the most appropriate executor type?
+        managementOperationExecutor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable run) {
+                Thread thread = new Thread(run);
+                thread.setName("Metrics Management Client Thread");
+                thread.setDaemon(true);
+                return thread;
+            }
+        });
     }
 
     /**
@@ -303,6 +298,14 @@ public class MetricsService implements Service<MetricsService> {
                 .withSchedule(CronScheduleBuilder.cronSchedule(cronExpression))
                 .build();
         return trigger;
+    }
+
+    public Integer getMaxLineLength() throws SchedulerException {
+        return (Integer)scheduler.getContext().get(Constants.MAX_LINE_LENGTH);
+    }
+
+    public void setMaxLineLength(Integer value) throws SchedulerException {
+        scheduler.getContext().put(Constants.MAX_LINE_LENGTH, value);
     }
 
     /**

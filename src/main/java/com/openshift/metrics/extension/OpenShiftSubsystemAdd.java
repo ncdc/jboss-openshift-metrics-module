@@ -12,14 +12,17 @@ import org.jboss.as.controller.descriptions.DefaultOperationDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.server.Services;
 import org.jboss.dmr.ModelNode;
+import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceBuilder.DependencyType;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
+import org.quartz.SchedulerException;
 
 /**
  * Handler responsible for adding the subsystem resource to the model
  */
 class OpenShiftSubsystemAdd extends AbstractAddStepHandler implements DescriptionProvider {
+    private final Logger log = Logger.getLogger(OpenShiftSubsystemAdd.class);
 
     static final OpenShiftSubsystemAdd INSTANCE = new OpenShiftSubsystemAdd();
 
@@ -35,19 +38,32 @@ class OpenShiftSubsystemAdd extends AbstractAddStepHandler implements Descriptio
     /** {@inheritDoc} */
     @Override
     protected void performRuntime(org.jboss.as.controller.OperationContext context, ModelNode operation, ModelNode model, org.jboss.as.controller.ServiceVerificationHandler verificationHandler, java.util.List<org.jboss.msc.service.ServiceController<?>> newControllers) throws OperationFailedException {
-        MetricsService service = new MetricsService();
+        try {
+            MetricsService service = new MetricsService();
 
-        ServiceController<MetricsService> controller = context.getServiceTarget()
-                .addService(MetricsService.getServiceName(), service)
-                .addDependency(DependencyType.REQUIRED,
-                        Services.JBOSS_SERVER_CONTROLLER,
-                        ModelController.class,
-                        service.getInjectedModelController())
-                .addListener(verificationHandler)
-                .setInitialMode(Mode.ACTIVE)
-                .install();
+            if(operation.hasDefined(Constants.MAX_LINE_LENGTH)) {
+                Integer value = operation.get(Constants.MAX_LINE_LENGTH).asInt();
+                try {
+                    service.setMaxLineLength(value);
+                } catch (SchedulerException e) {
+                    log.warnv(e, "Error setting max line length to {0}: {1}", value, e.getMessage());
+                }
+            }
 
-        newControllers.add(controller);
+            ServiceController<MetricsService> controller = context.getServiceTarget()
+                    .addService(MetricsService.getServiceName(), service)
+                    .addDependency(DependencyType.REQUIRED,
+                            Services.JBOSS_SERVER_CONTROLLER,
+                            ModelController.class,
+                            service.getInjectedModelController())
+                    .addListener(verificationHandler)
+                    .setInitialMode(Mode.ACTIVE)
+                    .install();
+
+            newControllers.add(controller);
+        } catch (SchedulerException e) {
+            throw new OperationFailedException("Error adding metrics subsystem", e);
+        }
     }
 
     @Override

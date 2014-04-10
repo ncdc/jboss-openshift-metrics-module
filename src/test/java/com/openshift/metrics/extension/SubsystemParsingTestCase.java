@@ -137,6 +137,26 @@ public class SubsystemParsingTestCase extends AbstractSubsystemTest {
         validateAddMetricOp(op, "g2.s1.sk1", "g2.s1.pk1");
     }
 
+    @Test
+    public void testParseSubsystemWithMaxLineLength() throws Exception {
+        String xml =
+                "<subsystem xmlns=\"" + OpenShiftSubsystemExtension.NAMESPACE + "\">"        +
+                "   <max-line-length>100</max-line-length>"                                  +
+                "   <metrics-group cron=\"* * * * * ?\">"                                    +
+                "       <source type=\"jboss\" path=\"g2.s1\">"                              +
+                "           <metric source-key=\"g2.s1.sk1\" publish-key=\"g2.s1.pk1\" />"   +
+                "       </source>"                                                           +
+                "   </metrics-group>"                                                        +
+                "</subsystem>";
+
+        //Parse the subsystem xml into operations
+        List<ModelNode> operations = super.parse(xml);
+
+        // op1: add subsystem
+        ModelNode op = operations.get(0);
+        validateAddSubsystemOp(op, 100);
+    }
+
     private void validateAddMetricOp(ModelNode op, String sourceKey, String publishKey) {
         final PathAddress addr = PathAddress.pathAddress(op.get(OP_ADDR));
         final PathElement element = addr.getElement(3);
@@ -163,11 +183,18 @@ public class SubsystemParsingTestCase extends AbstractSubsystemTest {
     }
 
     private void validateAddSubsystemOp(ModelNode op) {
+        validateAddSubsystemOp(op, null);
+    }
+
+    private void validateAddSubsystemOp(ModelNode op, Integer maxLineLength) {
         Assert.assertEquals(ADD, op.get(OP).asString());
         PathAddress addr = PathAddress.pathAddress(op.get(OP_ADDR));
         PathElement element = addr.getElement(0);
         Assert.assertEquals(SUBSYSTEM, element.getKey());
         Assert.assertEquals(OpenShiftSubsystemExtension.SUBSYSTEM_NAME, element.getValue());
+        if(maxLineLength != null) {
+            Assert.assertEquals(maxLineLength, (Integer)op.get(Constants.MAX_LINE_LENGTH).asInt());
+        }
     }
 
     /**

@@ -1,53 +1,86 @@
 package com.openshift.metrics.extension;
 
+import static com.openshift.metrics.extension.Constants.MAX_LINE_LENGTH;
 import static com.openshift.metrics.extension.Constants.METRIC_SOURCES;
 import static com.openshift.metrics.extension.Constants.MODEL_CONTROLLER_CLIENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 
-import javax.management.AttributeNotFoundException;
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanException;
 import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import javax.management.ReflectionException;
 import javax.management.openmbean.CompositeData;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
+import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.quartz.SchedulerException;
+import org.quartz.PersistJobDataAfterExecution;
 
+@DisallowConcurrentExecution
+@PersistJobDataAfterExecution
 public class MetricJob implements Job {
     private final Logger log = Logger.getLogger(MetricJob.class);
 
-    private static final String PUBLISH_FORMAT="type=metric cart=jboss {0}={1}";
+    private List<String> metricsToPublish = new ArrayList<String>();
+
+    private int outputLength = 0;
+
+    private static final int DEFAULT_MAX_LINE_LENGTH = 1024;
+
+    private Integer maxLineLength = null;
+
+    private void logError(JobExecutionContext context, String message, Exception e) {
+        @SuppressWarnings("unchecked")
+        Set<String> errorsLogged = (Set<String>) context.getJobDetail().getJobDataMap().get(Constants.ERRORS_LOGGED);
+
+        if(null == errorsLogged) {
+            errorsLogged = new HashSet<String>();
+            context.getJobDetail().getJobDataMap().put(Constants.ERRORS_LOGGED, errorsLogged);
+        }
+
+        if(!errorsLogged.contains(message)) {
+            errorsLogged.add(message);
+            log.error(message, e);
+        }
+    }
 
     private ModelControllerClient getModelControllerClient(JobExecutionContext context) {
         ModelControllerClient client = null;
 
         try {
             client = (ModelControllerClient) context.getScheduler().getContext().get(MODEL_CONTROLLER_CLIENT);
-        } catch (SchedulerException e) {
-            log.error("Unable to retrieve model controller client from job/scheduler context", e);
-            //TODO do we need to consider unscheduling this job if we fail to get the client
-            //some # of times?
+        } catch (Exception e) {
+            logError(context, "Unable to retrieve model controller client from job/scheduler context", e);
         }
 
         return client;
+    }
+
+    private void lookupMaxLineLength(JobExecutionContext context) {
+        try {
+            maxLineLength = (Integer)context.getScheduler().getContext().get(MAX_LINE_LENGTH);
+        } catch (Exception e) {
+            // ignore exception - use default value instead
+        }
+
+        if(null == maxLineLength) {
+            maxLineLength = DEFAULT_MAX_LINE_LENGTH;
+        }
     }
 
     /**
@@ -73,6 +106,8 @@ public class MetricJob implements Job {
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
+        lookupMaxLineLength(context);
+
         // the job data map has the metric sources associated with this job
         final JobDataMap jobDataMap = context.getMergedJobDataMap();
 
@@ -89,10 +124,14 @@ public class MetricJob implements Job {
             }
 
             if(Constants.MBEAN.equals(source.getType())) {
-                doMBeanSource(source);
+                doMBeanSource(source, context);
             } else {
                 doNativeSource(source, context);
             }
+        }
+
+        if(metricsToPublish.size() > 0) {
+            publish();
         }
     }
 
@@ -114,7 +153,7 @@ public class MetricJob implements Job {
         return new String[] {key, subkey};
     }
 
-    private void doMBeanSource(Source source) {
+    private void doMBeanSource(Source source, JobExecutionContext context) {
         // Get the mBeanServer to access source
         MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
@@ -136,32 +175,26 @@ public class MetricJob implements Job {
             // Execute getAttribute on mBeanServer with source
             try {
                 ObjectName name = new ObjectName(source.getPath());
+
                 Object result = mBeanServer.getAttribute(name, key);
+
                 if(subkey != null) {
                     if(result instanceof CompositeData) {
                         CompositeData cd = (CompositeData) result;
+
                         if(cd.containsKey(subkey)) {
                             result = cd.get(subkey);
+                        } else {
+                            continue;
                         }
                     }
                 }
+
                 String metricValue  = result.toString();
-                publishMetric(publishKey, metricValue);
-            } catch (AttributeNotFoundException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (InstanceNotFoundException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (MBeanException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (ReflectionException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (MalformedObjectNameException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                storeMetric(publishKey, metricValue);
+            } catch (Exception e) {
+                String message = MessageFormat.format("Error retrieving mbean metric source={0}, source-key={1}", source.getPath(), metric.getSourceKey());
+                logError(context, message, e);
             }
         }
     }
@@ -204,8 +237,14 @@ public class MetricJob implements Job {
                 // execute the request
                 ModelNode r = modelControllerClient.execute(op);
 
-                // TODO consider checking the status
-                // get the result
+                final ModelNode outcome = r.get(ModelDescriptionConstants.OUTCOME);
+                if(null == outcome || !ModelDescriptionConstants.SUCCESS.equals(outcome.asString())) {
+                    String message = MessageFormat.format("Error retrieving jboss metric source={0}, source-key={1}: {2}", source.getPath(), metric.getSourceKey(), r.get(ModelDescriptionConstants.FAILURE_DESCRIPTION).asString());
+                    logError(context, message, null);
+
+                    continue;
+                }
+
                 ModelNode result = r.get(ModelDescriptionConstants.RESULT);
 
                 if(subkey != null) {
@@ -213,18 +252,41 @@ public class MetricJob implements Job {
                     result = result.get(subkey);
                 }
 
-                String metricValue = result.asString();
-                publishMetric(publishKey, metricValue);
-            } catch (IOException e) {
-                log.error("Error executing operation " + op, e);
-                // TODO anything else to do here?
+                if (result.isDefined()) {
+                    String metricValue = result.asString();
+                    storeMetric(publishKey, metricValue);
+                }
+            } catch (Exception e) {
+                String message = MessageFormat.format("Error retrieving jboss metric source={0}, source-key={1}", source.getPath(), metric.getSourceKey());
+                logError(context, message, e);
             }
         }
     }
 
-    private void publishMetric(String publishKey, String metricValue) {
-        //TODO switch to syslog?
-        log.info(MessageFormat.format(PUBLISH_FORMAT, publishKey, metricValue));
+    private void storeMetric(String publishKey, String metricValue) {
+        final String newMetric = publishKey + "=" + metricValue;
+        final int newMetricLength = newMetric.length() + 1;
+        if (outputLength + newMetricLength > maxLineLength) {
+            publish();
+        }
+        metricsToPublish.add(newMetric);
+        outputLength += newMetricLength;
     }
 
+    private void publish() {
+        //TODO consider allowing user to configure "cart" text in config file
+        StringBuilder sb = new StringBuilder("type=metric cart=jboss ");
+        for(int i = 0, n = metricsToPublish.size(); i < n; i++) {
+            String s = metricsToPublish.get(i);
+            sb.append(s);
+            if(i < n - 1) {
+                sb.append(" ");
+            }
+        }
+
+        log.info(sb.toString());
+
+        metricsToPublish.clear();
+        outputLength = 0;
+    }
 }
