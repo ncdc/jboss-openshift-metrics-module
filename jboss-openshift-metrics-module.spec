@@ -6,7 +6,7 @@ License:       ASL 2.0
 URL:           http://www.openshift.com
 Source0:       jboss-openshift-metrics-module-%{version}.tar.gz
 BuildRequires: java
-BuildRequires: maven
+BuildRequires: maven3
 BuildArch:     noarch
 
 %global as7_module_dir /etc/alternatives/jbossas-7/modules/
