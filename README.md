@@ -1,4 +1,4 @@
-# jboss-openshift-metrics-extension
+# jboss-openshift-metrics-module
 
 ## Prerequisites
 
