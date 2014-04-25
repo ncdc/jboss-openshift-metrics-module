@@ -21,6 +21,13 @@
         <module.name>com.openshift.metrics</module.name>
     </properties>
 
+    <scm>
+      <connection>scm:git:ssh://github.com/ncdc/jboss-openshift-metrics-module.git</connection>
+      <developerConnection>scm:git:ssh://git@github.com/ncdc/jboss-openshift-metrics-module.git</developerConnection>
+      <url>https://github.com/ncdc/jboss-openshift-metrics-module</url>
+      <tag>HEAD</tag>
+    </scm>
+
 
     <build>
       <!-- Maven will append the version to the finalName (which is the name
